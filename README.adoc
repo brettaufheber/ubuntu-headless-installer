@@ -1,0 +1,63 @@
+= Ubuntu Installer
+
+A single Bash script that can be used to easily install Ubuntu from command line.
+
+Download new versions from the Git repository https://github.com/brettaufheber/ubuntu-installer.
+
+=== Usage
+
+==== Command
+
+[source]
+----
+sudo ubuntu-installer.sh \
+  -t install-system \
+  -u <your username> \
+  -c <Ubuntu codename: bionic|artful|...> \
+  -b <optional software bundles: desktop,dev,...> \
+  -x <block device file for system partition '/': /dev/...> \
+  -y <block device file for home partition '/home': /dev/...>
+----
+
+==== Dependencies
+
+The installer depends on "debootstrap".
+
+[source]
+----
+sudo apt-get install debootstrap
+----
+
+==== Partitioning and Formatting
+
+* Partitioning must be done before installation because the installer requires the system partition and home partition
+as block device files.
+* The block device file for the system partition must be unmounted before starting the installer.
+* The system partition is formatted during installation.
+* The home partition is *not* formatted during installation to prevent data loss and must be formatted manually before
+installation.
+
+==== Software bundles
+
+* virt: QEMU/KVM with extended tooling
+* dev: basic equipment for software developers
+* desktop: minimal GNOME desktop
+* laptop: power saving tools for mobile devices
+* web: server and proxy for web
+
+=== License
+
+Copyright (c) 2018 Eric Löffler
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see _http://www.gnu.org/licenses/_.
