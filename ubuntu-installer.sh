@@ -45,6 +45,9 @@ function main {
     install-script)
       task_install_script
       ;;
+    install-desktop-helpers)
+      task_install_desktop_helpers
+      ;;
     install-gdm-theme)
       task_install_gdm_theme
       ;;
@@ -170,6 +173,28 @@ function task_install_script {
 
   cp -v "$TEMPDIR/ubuntu-installer.sh" "$BINDIR"
   chmod a+x "$BINDIR/ubuntu-installer.sh"
+
+  rm -rf "$TEMPDIR"
+}
+
+function task_install_desktop_helpers {
+
+  # check arguments
+  check_root_privileges
+
+  TEMPDIR=$(mktemp -d)
+  BINDIR='/usr/local/sbin'
+
+  git clone 'https://github.com/brettaufheber/ubuntu-installer.git' "$TEMPDIR"
+
+  for i in "$TEMPDIR/desktop-helpers"/*; do
+
+    f=$(basename "$i")
+
+    cp -v "$i" "$BINDIR"
+    chmod a+x "$BINDIR/$f"
+
+  done
 
   rm -rf "$TEMPDIR"
 }
@@ -550,6 +575,9 @@ function installation {
 
     # add flatpak remote: flathub
     chroot "$CHROOT" flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+
+    # install helper scripts
+    chroot "$CHROOT" "$SELFNAME" -t install-desktop-helpers
 
     # install default GDM theme
     chroot "$CHROOT" "$SELFNAME" -t install-gdm-theme
