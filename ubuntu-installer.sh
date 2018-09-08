@@ -42,6 +42,9 @@ function main {
 
   # select task
   case "$TASK" in
+    install-gdm-theme)
+      task_install_gdm_theme
+      ;;
     create-user)
       task_create_user
       ;;
@@ -150,6 +153,21 @@ function check_mounting {
     exit 1
 
   fi
+}
+
+function task_install_gdm_theme {
+
+  # check arguments
+  check_root_privileges
+
+  glib-compile-resources \
+    --sourcedir='/usr/share/themes/Materia-light/gnome-shell' \
+    --target='/usr/share/gnome-shell/gnome-shell-theme.gresource' \
+    '/usr/share/themes/Materia-light/gnome-shell/gnome-shell-theme.gresource.xml'
+
+  cp \
+    '/usr/share/themes/Materia-light/gnome-shell/gnome-shell.css' \
+    '/usr/share/gnome-shell/theme/ubuntu.css'
 }
 
 function task_create_user {
@@ -513,6 +531,9 @@ function installation {
 
     # add flatpak remote: flathub
     chroot "$CHROOT" flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+
+    # install default GDM theme
+    chroot "$CHROOT" "$SELFNAME" -t install-gdm-theme
 
   fi
 
