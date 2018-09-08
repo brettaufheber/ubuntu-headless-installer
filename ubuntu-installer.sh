@@ -42,6 +42,9 @@ function main {
 
   # select task
   case "$TASK" in
+    install-script)
+      task_install_script
+      ;;
     install-gdm-theme)
       task_install_gdm_theme
       ;;
@@ -153,6 +156,22 @@ function check_mounting {
     exit 1
 
   fi
+}
+
+function task_install_script {
+
+  # check arguments
+  check_root_privileges
+
+  TEMPDIR=$(mktemp -d)
+  BINDIR='/usr/local/sbin'
+
+  git clone 'https://github.com/brettaufheber/ubuntu-installer.git' "$TEMPDIR"
+
+  cp -v "$TEMPDIR/ubuntu-installer.sh" "$BINDIR"
+  chmod a+x "$BINDIR/ubuntu-installer.sh"
+
+  rm -rf "$TEMPDIR"
 }
 
 function task_install_gdm_theme {
