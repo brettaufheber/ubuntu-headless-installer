@@ -582,6 +582,9 @@ function installation {
     # install default GDM theme
     chroot "$CHROOT" "$SELFNAME" -t install-gdm-theme
 
+    # modify default GNOME settings
+    install_default_gnome_settings
+
   fi
 
   # create user
@@ -783,6 +786,113 @@ EOF
   # execute script
   chroot "$CHROOT" /bin/bash "$TEMPFILE"
   rm "$TEMPFILE"
+}
+
+function install_default_gnome_settings {
+
+  # create configuration directory
+  mkdir -p "$CHROOT/etc/dconf/db/site.d/"
+
+  # write default settings
+  echo '# changed default settings' > "$CHROOT/etc/dconf/db/site.d/defaults"
+  cat >> "$CHROOT/etc/dconf/db/site.d/defaults" << 'EOF'
+
+# set background
+
+[org/gnome/desktop/background]
+color-shading-type='solid'
+
+[org/gnome/desktop/background]
+picture-options='wallpaper'
+
+[org/gnome/desktop/background]
+picture-uri='file:////usr/share/gnome-control-center/pixmaps/noise-texture-light.png'
+
+[org/gnome/desktop/background]
+primary-color='#425265'
+
+[org/gnome/desktop/background]
+secondary-color='#425265'
+
+[org/gnome/desktop/screensaver]
+color-shading-type='solid'
+
+[org/gnome/desktop/screensaver]
+picture-options='wallpaper'
+
+[org/gnome/desktop/screensaver]
+picture-uri='file:////usr/share/gnome-control-center/pixmaps/noise-texture-light.png'
+
+[org/gnome/desktop/screensaver]
+primary-color='#425265'
+
+[org/gnome/desktop/screensaver]
+secondary-color='#425265'
+
+# set default theme
+
+[org/gnome/shell]
+enabled-extensions=['user-theme@gnome-shell-extensions.gcampax.github.com']
+
+[org/gnome/desktop/interface]
+gtk-theme='Materia-light-compact'
+
+[org/gnome/shell/extensions/user-theme]
+name='Materia-dark'
+
+# power saving options
+
+[org/gnome/desktop/session]
+idle-delay=uint32 0
+
+[org/gnome/settings-daemon/plugins/power]
+idle-dim=false
+
+[org/gnome/settings-daemon/plugins/power]
+sleep-inactive-battery-type='nothing'
+
+[org/gnome/settings-daemon/plugins/power]
+sleep-inactive-ac-type='nothing'
+
+[org/gnome/settings-daemon/plugins/power]
+power-button-action='suspend'
+
+# disable event sounds
+
+[org/gnome/desktop/sound]
+event-sounds=false
+
+# modify user interface ("dconf watch /" helps to find the keys and values)
+
+[org/gnome/shell]
+disable-user-extensions=false
+
+[org/gnome/desktop/wm/preferences]
+button-layout='appmenu:minimize,maximize,close'
+
+[org/gnome/settings-daemon/plugins/xsettings]
+overrides={'Gtk/ShellShowsAppMenu': <0>}
+
+[org/gnome/desktop/interface]
+show-battery-percentage=true
+
+[org/gnome/desktop/interface]
+clock-show-date=true
+
+[org/gnome/desktop/calendar]
+show-weekdate=true
+
+[org/gnome/mutter]
+dynamic-workspaces=true
+
+EOF
+
+  # change dconf profile
+  echo 'user-db:user' >> "$CHROOT/etc/dconf/profile/user"
+  echo 'system-db:site' >> "$CHROOT/etc/dconf/profile/user"
+
+  # update dconf inside chroot
+  chroot "$CHROOT" dconf update
 }
 
 main "$@"
