@@ -166,7 +166,7 @@ function task_install_script {
   # check arguments
   check_root_privileges
 
-  TEMPDIR=$(mktemp -d)
+  TEMPDIR="$(mktemp -d)"
   BINDIR='/usr/local/sbin'
 
   git clone 'https://github.com/brettaufheber/ubuntu-installer.git' "$TEMPDIR"
@@ -182,7 +182,7 @@ function task_install_desktop_helpers {
   # check arguments
   check_root_privileges
 
-  TEMPDIR=$(mktemp -d)
+  TEMPDIR="$(mktemp -d)"
   BINDIR='/usr/local/sbin'
 
   git clone 'https://github.com/brettaufheber/ubuntu-installer.git' "$TEMPDIR"
@@ -403,7 +403,7 @@ function task_install_base {
 
     # get current system language
     . /etc/default/locale
-    SYSLANG=$(echo $LANG | grep -oE '^([a-zA-Z]+)' | sed -r 's/^(C|POSIX)$/en/')
+    SYSLANG=$(echo "$LANG" | grep -oE '^([a-zA-Z]+)' | sed -r 's/^(C|POSIX)$/en/')
     SYSLANG=${SYSLANG:-"en"}
 
     # install GTK+ libraries
@@ -443,7 +443,7 @@ function task_install_base {
     apt-get -y install chrome-gnome-shell
 
     # install language pack
-    apt-get -y install language-pack-gnome-$SYSLANG
+    apt-get -y install "language-pack-gnome-$SYSLANG"
 
   fi
 
@@ -724,7 +724,7 @@ function configure_network {
 function configure_packages {
 
   # temporary file for this installation step
-  TEMPFILE=$(mktemp)
+  TEMPFILE="$(mktemp)"
 
   # write installation script
   echo '#!/bin/bash' > "$TEMPFILE"
@@ -749,7 +749,7 @@ EOF
 function install_core_system {
 
   # temporary file for this installation step
-  TEMPFILE=$(mktemp)
+  TEMPFILE="$(mktemp)"
 
   # write installation script
   echo '#!/bin/bash' > "$TEMPFILE"
