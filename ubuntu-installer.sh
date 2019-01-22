@@ -396,6 +396,10 @@ function task_install_base {
     apt-get -y install gradle
     apt-get -y install sbt
 
+    # install network diagnostic tools
+    apt-get -y install nmap
+    apt-get -y install tshark
+
   fi
 
   # minimal desktop
