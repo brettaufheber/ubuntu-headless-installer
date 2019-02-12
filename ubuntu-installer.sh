@@ -18,10 +18,10 @@ function main {
         BUNDLES=$OPTARG
         ;;
       x)
-        DEVROOT=$OPTARG
+        DEV_ROOT=$OPTARG
         ;;
       y)
-        DEVHOME=$OPTARG
+        DEV_HOME=$OPTARG
         ;;
       \?)
         echo "Option -$OPTARG is invalid" >&2
@@ -75,7 +75,7 @@ function main {
 
 function check_root_privileges {
 
-  if [ "$(whoami)" != 'root' ]; then
+  if [[ $(whoami) != 'root' ]]; then
 
     echo 'Require root privileges' >&2
     exit 1
@@ -85,7 +85,7 @@ function check_root_privileges {
 
 function check_username {
 
-  if [ -z "$USERNAME" ] || ! echo "$USERNAME" | grep -qE "$NAME_REGEX"; then
+  if [[ -z "$USERNAME" ]] || ! echo "$USERNAME" | grep -qE "$NAME_REGEX"; then
 
     echo 'Require valid username' >&2
     exit 1
@@ -118,7 +118,7 @@ function check_username_exists {
 
 function check_codename {
 
-  if [ -z "$CODENAME" ] || ! echo "$CODENAME" | grep -qE '^[a-z]*$'; then
+  if [[ -z "$CODENAME" ]] || ! echo "$CODENAME" | grep -qE '^[a-z]*$'; then
 
     echo 'Require valid Ubuntu codename' >&2
     exit 1
@@ -130,11 +130,11 @@ function check_software_bundle_names {
 
   for i in "${!BARRAY[@]}"; do
 
-    if [ "${BARRAY[$i]}" != 'virt' ] && \
-        [ "${BARRAY[$i]}" != 'dev' ] && \
-        [ "${BARRAY[$i]}" != 'desktop' ] && \
-        [ "${BARRAY[$i]}" != 'laptop' ] && \
-        [ "${BARRAY[$i]}" != 'web' ]; then
+    if [[ ${BARRAY[$i]} != 'virt' ]] && \
+        [[ ${BARRAY[$i]} != 'dev' ]] && \
+        [[ ${BARRAY[$i]} != 'desktop' ]] && \
+        [[ ${BARRAY[$i]} != 'laptop' ]] && \
+        [[ ${BARRAY[$i]} != 'web' ]]; then
 
       echo 'Require valid bundle names [virt, dev, desktop, laptop, web]' >&2
       exit 1
@@ -146,14 +146,14 @@ function check_software_bundle_names {
 
 function check_mounting {
 
-  if [ -z "$DEVROOT" ] || [[ "$DEVROOT" != /dev/* ]] || [ ! -b "$DEVROOT" ] || mount | grep -q "$DEVROOT"; then
+  if [[ -z "$DEV_ROOT" ]] || [[ "$DEV_ROOT" != /dev/* ]] || [[ ! -b "$DEV_ROOT" ]] || mount | grep -q "$DEV_ROOT"; then
 
     echo 'Require unmounted device file for /' >&2
     exit 1
 
   fi
 
-  if [ -z "$DEVHOME" ] || [[ "$DEVHOME" != /dev/* ]] || [ ! -b "$DEVHOME" ]; then
+  if [[ -z "$DEV_HOME" ]] || [[ "$DEV_HOME" != /dev/* ]] || [[ ! -b "$DEV_HOME" ]]; then
 
     echo 'Require device file for /home' >&2
     exit 1
@@ -326,7 +326,7 @@ function task_install_base {
   aptitude -y install ~pstandard ~pimportant ~prequired
 
   # virtualization software
-  if [[ "${BARRAY[@]}" =~ 'virt' ]]; then
+  if [[ ${BARRAY[*]} =~ 'virt' ]]; then
 
     # install machine emulator and virtualizer with tooling
     apt-get -y install qemu qemu-kvm
@@ -335,7 +335,7 @@ function task_install_base {
   fi
 
   # development software
-  if [[ "${BARRAY[@]}" =~ 'dev' ]]; then
+  if [[ ${BARRAY[*]} =~ 'dev' ]]; then
 
     # install support for Assembly/C/C++
     apt-get -y install build-essential
@@ -403,7 +403,7 @@ function task_install_base {
   fi
 
   # minimal desktop
-  if [[ "${BARRAY[@]}" =~ 'desktop' ]]; then
+  if [[ ${BARRAY[*]} =~ 'desktop' ]]; then
 
     # get current system language
     . /etc/default/locale
@@ -452,7 +452,7 @@ function task_install_base {
   fi
 
   # minimal desktop with virtualization software
-  if [[ "${BARRAY[@]}" =~ 'desktop' ]] && [[ "${BARRAY[@]}" =~ 'virt' ]]; then
+  if [[ ${BARRAY[*]} =~ 'desktop' ]] && [[ ${BARRAY[*]} =~ 'virt' ]]; then
 
     # graphical VM manager
     apt-get -y install virt-manager
@@ -460,7 +460,7 @@ function task_install_base {
   fi
 
   # minimal desktop with development software
-  if [[ "${BARRAY[@]}" =~ 'desktop' ]] && [[ "${BARRAY[@]}" =~ 'dev' ]]; then
+  if [[ ${BARRAY[*]} =~ 'desktop' ]] && [[ ${BARRAY[*]} =~ 'dev' ]]; then
 
     # install network packet analyzer
     apt-get -y install wireshark
@@ -468,7 +468,7 @@ function task_install_base {
   fi
 
   # power saving tools
-  if [[ "${BARRAY[@]}" =~ 'laptop' ]]; then
+  if [[ ${BARRAY[*]} =~ 'laptop' ]]; then
 
     # install tool to collect power-usage metrics
     apt-get -y install powertop
@@ -479,7 +479,7 @@ function task_install_base {
   fi
 
   # web server and web proxy
-  if [[ "${BARRAY[@]}" =~ 'web' ]]; then
+  if [[ ${BARRAY[*]} =~ 'web' ]]; then
 
     # install web server
     apt-get -y install nginx
@@ -502,20 +502,20 @@ function task_install_system {
   # set some variables
   CHROOT=/mnt/ubuntu-$(cat '/proc/sys/kernel/random/uuid')
   CHHOME=$CHROOT/home
-  SELFPATH=$(readlink -f "$0")
-  SELFNAME=$(basename "$SELFPATH")
+  SELF_PATH=$(readlink -f "$0")
+  SELF_NAME=$(basename "$SELF_PATH")
 
-  # format $DEVROOT
-  mkfs.ext4 "$DEVROOT"
+  # format $DEV_ROOT
+  mkfs.ext4 "$DEV_ROOT"
 
-  # mount $DEVROOT
+  # mount $DEV_ROOT
   mkdir -p "$CHROOT"
-  mount "$DEVROOT" "$CHROOT"
+  mount "$DEV_ROOT" "$CHROOT"
 
-  # mount $DEVHOME
-  if mount | grep -q "$DEVHOME"; then
+  # mount $DEV_HOME
+  if mount | grep -q "$DEV_HOME"; then
 
-    HOME_PATH=$(df "$DEVHOME" | grep -oE '(/[[:alnum:]]+)+$' | head -1)
+    HOME_PATH=$(df "$DEV_HOME" | grep -oE '(/[[:alnum:]]+)+$' | head -1)
 
     mkdir -p "$CHHOME"
     mount -o bind "$HOME_PATH" "$CHHOME"
@@ -523,7 +523,7 @@ function task_install_system {
   else
 
     mkdir -p "$CHHOME"
-    mount "$DEVHOME" "$CHHOME"
+    mount "$DEV_HOME" "$CHHOME"
 
   fi
 
@@ -545,8 +545,8 @@ function installation {
   debootstrap --arch=amd64 "$CODENAME" "$CHROOT" 'http://archive.ubuntu.com/ubuntu'
 
   # make this script available
-  cp -f "$SELFPATH" "$CHROOT/usr/local/sbin"
-  chmod a+x "$CHROOT/usr/local/sbin/$SELFNAME"
+  cp -f "$SELF_PATH" "$CHROOT/usr/local/sbin"
+  chmod a+x "$CHROOT/usr/local/sbin/$SELF_NAME"
 
   # configuration before starting chroot
   configure_system
@@ -570,22 +570,22 @@ function installation {
   install_core_system
 
   # manage package sources
-  chroot "$CHROOT" "$SELFNAME" -t manage-package-sources
+  chroot "$CHROOT" "$SELF_NAME" -t manage-package-sources
 
   # install software
-  chroot "$CHROOT" "$SELFNAME" -t install-base -b "$BUNDLES"
+  chroot "$CHROOT" "$SELF_NAME" -t install-base -b "$BUNDLES"
 
   # do some modifications for desktop environments
-  if [[ "${BARRAY[@]}" =~ 'desktop' ]]; then
+  if [[ ${BARRAY[*]} =~ 'desktop' ]]; then
 
     # add flatpak remote: flathub
     chroot "$CHROOT" flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 
     # install helper scripts
-    chroot "$CHROOT" "$SELFNAME" -t install-desktop-helpers
+    chroot "$CHROOT" "$SELF_NAME" -t install-desktop-helpers
 
     # install default GDM theme
-    chroot "$CHROOT" "$SELFNAME" -t install-gdm-theme
+    chroot "$CHROOT" "$SELF_NAME" -t install-gdm-theme
 
     # modify default GNOME settings
     install_default_gnome_settings
@@ -593,7 +593,7 @@ function installation {
   fi
 
   # create user
-  chroot "$CHROOT" "$SELFNAME" -t create-user -u "$USERNAME"
+  chroot "$CHROOT" "$SELF_NAME" -t create-user -u "$USERNAME"
 
   # flush the cache
   sync
@@ -617,8 +617,8 @@ function installation {
 function configure_system {
 
   # get UUID of each partition
-  UUID_ROOT=$(blkid "$DEVROOT" | grep -oE 'UUID="[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}' | cut -c 7-)
-  UUID_HOME=$(blkid "$DEVHOME" | grep -oE 'UUID="[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}' | cut -c 7-)
+  UUID_ROOT=$(blkid "$DEV_ROOT" | grep -oE 'UUID="[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}' | cut -c 7-)
+  UUID_HOME=$(blkid "$DEV_HOME" | grep -oE 'UUID="[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}' | cut -c 7-)
 
   # set hostname
   echo 'ubuntu' > "$CHROOT/etc/hostname"
@@ -651,7 +651,7 @@ function configure_system {
 function configure_network {
 
   # set HTTP proxy
-  if [ -n "$http_proxy" ]; then
+  if [[ -n "$http_proxy" ]]; then
 
     echo "http_proxy=$http_proxy" >> "$CHROOT/etc/environment"
     echo "HTTP_PROXY=$http_proxy" >> "$CHROOT/etc/environment"
@@ -660,7 +660,7 @@ function configure_network {
   fi
 
   # set HTTPS proxy
-  if [ -n "$https_proxy" ]; then
+  if [[ -n "$https_proxy" ]]; then
 
     echo "https_proxy=$https_proxy" >> "$CHROOT/etc/environment"
     echo "HTTPS_PROXY=$https_proxy" >> "$CHROOT/etc/environment"
@@ -669,7 +669,7 @@ function configure_network {
   fi
 
   # set FTP proxy
-  if [ -n "$ftp_proxy" ]; then
+  if [[ -n "$ftp_proxy" ]]; then
 
     echo "ftp_proxy=$ftp_proxy" >> "$CHROOT/etc/environment"
     echo "FTP_PROXY=$ftp_proxy" >> "$CHROOT/etc/environment"
@@ -678,7 +678,7 @@ function configure_network {
   fi
 
   # set all socks proxy
-  if [ -n "$all_proxy" ]; then
+  if [[ -n "$all_proxy" ]]; then
 
     echo "all_proxy=$all_proxy" >> "$CHROOT/etc/environment"
     echo "ALL_PROXY=$all_proxy" >> "$CHROOT/etc/environment"
@@ -686,7 +686,7 @@ function configure_network {
   fi
 
   # set ignore-hosts
-  if [ -n "$no_proxy" ]; then
+  if [[ -n "$no_proxy" ]]; then
 
     echo "no_proxy=$no_proxy" >> "$CHROOT/etc/environment"
     echo "NO_PROXY=$no_proxy" >> "$CHROOT/etc/environment"
@@ -694,14 +694,14 @@ function configure_network {
   fi
 
   # copy DNS settings
-  if [ -f '/etc/systemd/resolved.conf' ]; then
+  if [[ -f '/etc/systemd/resolved.conf' ]]; then
 
     cp -f '/etc/systemd/resolved.conf' "$CHROOT/etc/systemd/resolved.conf"
 
   fi
 
   # copy connection settings (system without network-manager)
-  if [ -d '/etc/netplan' ]; then
+  if [[ -d '/etc/netplan' ]]; then
 
     mkdir -p "$CHROOT/etc/netplan"
     cp -rf '/etc/netplan/.' "$CHROOT/etc/netplan"
@@ -709,7 +709,7 @@ function configure_network {
   fi
 
   # copy connection settings (system with network-manager)
-  if [ -d '/etc/NetworkManager/system-connections' ]; then
+  if [[ -d '/etc/NetworkManager/system-connections' ]]; then
 
     mkdir -p "$CHROOT/etc/NetworkManager/system-connections"
     cp -rf '/etc/NetworkManager/system-connections/.' "$CHROOT/etc/NetworkManager/system-connections"
@@ -717,7 +717,7 @@ function configure_network {
   fi
 
   # https://bugs.launchpad.net/ubuntu/+source/network-manager/+bug/1638842
-  if [[ "${BARRAY[@]}" =~ 'desktop' ]]; then
+  if [[ ${BARRAY[*]} =~ 'desktop' ]]; then
 
     mkdir -p "$CHROOT/etc/NetworkManager/conf.d"
     touch "$CHROOT/etc/NetworkManager/conf.d/10-globally-managed-devices.conf"
@@ -901,3 +901,5 @@ EOF
 }
 
 main "$@"
+
+exit 0
