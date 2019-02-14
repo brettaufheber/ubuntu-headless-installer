@@ -197,14 +197,14 @@ function check_software_bundle_names {
 
 function check_mounting {
 
-  if [[ -z "$DEV_ROOT" ]] || [[ "$DEV_ROOT" != /dev/* ]] || [[ ! -b "$DEV_ROOT" ]] || mount | grep -q "$DEV_ROOT"; then
+  if [[ -z "$DEV_ROOT" ]] || [[ ! -b "$DEV_ROOT" ]] || mount | grep -q "$DEV_ROOT"; then
 
     echo "$SELF_NAME: require unmounted device file for /" >&2
     exit 1
 
   fi
 
-  if [[ -z "$DEV_HOME" ]] || [[ "$DEV_HOME" != /dev/* ]] || [[ ! -b "$DEV_HOME" ]]; then
+  if [[ -z "$DEV_HOME" ]] || [[ ! -b "$DEV_HOME" ]]; then
 
     echo "$SELF_NAME: require device file for /home" >&2
     exit 1
