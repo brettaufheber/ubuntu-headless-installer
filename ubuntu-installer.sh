@@ -2,82 +2,133 @@
 
 function main {
 
-  # set required variables by arguments
-  while getopts ":t:u:c:b:x:y:" opt; do
-    case $opt in
-      t)
-        TASK=$OPTARG
+  # set default values and configuration
+  SELF_PATH="$(readlink -f "$0")"
+  SELF_NAME="$(basename "$SELF_PATH")"
+  NAME_REGEX='^[a-z][-a-z0-9]*$'
+  EXTRA_GROUPS='adm audio cdrom dialout dip floppy libvirt lpadmin plugdev sudo users video wireshark'
+  SHOW_HELP=false
+
+  # parse arguments
+  OPTIONS_PARSED=$(getopt \
+    --options 'hu:c:b:x:y:' \
+    --longoptions 'help,username:,codename:,bundles:,dev-root:,dev-home:' \
+    --name "$SELF_NAME" \
+    -- "$@"
+  )
+
+  # replace arguments
+  eval set -- "$OPTIONS_PARSED"
+
+  # apply arguments
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -h|--help)
+        SHOW_HELP=true
+        shift 1
         ;;
-      u)
-        USERNAME=$OPTARG
+      -u|--username)
+        USERNAME="$2"
+        shift 2
         ;;
-      c)
-        CODENAME=$OPTARG
+      -c|--codename)
+        CODENAME="$2"
+        shift 2
         ;;
-      b)
-        BUNDLES=$OPTARG
+      -b|--bundles)
+        BUNDLES="$2"
+        shift 2
         ;;
-      x)
-        DEV_ROOT=$OPTARG
+      -x|--dev-root)
+        DEV_ROOT="$2"
+        shift 2
         ;;
-      y)
-        DEV_HOME=$OPTARG
+      -y|--dev-home)
+        DEV_HOME="$2"
+        shift 2
         ;;
-      \?)
-        echo "Option -$OPTARG is invalid" >&2
-        exit 1
+      --)
+        shift 1
+        break
         ;;
-      :)
-        echo "Option -$OPTARG requires an argument" >&2
-        exit 1
+      *)
+        break
         ;;
     esac
   done
 
-  NAME_REGEX='^[a-z][-a-z0-9]*$'
-  EXTRA_GROUPS='adm audio cdrom dialout dip floppy libvirt lpadmin plugdev sudo users video wireshark'
+  # either print the help text or process task
+  if "$SHOW_HELP"; then
 
-  readarray -td ',' BARRAY <<< "$BUNDLES"
-  for i in "${!BARRAY[@]}"; do BARRAY[$i]=$(echo "${BARRAY[$i]}" | tr -d '[:space:]'); done
+    # show help text
+    show_help
 
-  # select task
-  case "$TASK" in
-    install-script)
-      task_install_script
-      ;;
-    install-desktop-helpers)
-      task_install_desktop_helpers
-      ;;
-    install-gdm-theme)
-      task_install_gdm_theme
-      ;;
-    create-user)
-      task_create_user
-      ;;
-    modify-user)
-      task_modify_user
-      ;;
-    manage-package-sources)
-      task_manage_package_sources
-      ;;
-    install-base)
-      task_install_base
-      ;;
-    install-system)
-      task_install_system
-      ;;
-    *)
-      echo "Require valid task" >&2
+  else
+
+    # check if there is a unassigned argument to interpret it as task
+    if [[ $# -eq 0 ]]; then
+
+      echo "$SELF_NAME: require a task to continue" >&2
       exit 1
-      ;;
-  esac
+
+    fi
+
+    # assign the task
+    TASK="$1"
+    shift 1
+
+    # check if there is no unassigned argument left
+    if [[ $# -ne 0 ]]; then
+
+      echo "$SELF_NAME: cannot handle unassigned arguments: $*" >&2
+      exit 1
+
+    fi
+
+    # create bundles array
+    readarray -td ',' BARRAY <<< "$BUNDLES"
+    for i in "${!BARRAY[@]}"; do BARRAY[$i]=$(echo "${BARRAY[$i]}" | tr -d '[:space:]'); done
+
+    # select task
+    case "$TASK" in
+      install-script)
+        task_install_script
+        ;;
+      install-desktop-helpers)
+        task_install_desktop_helpers
+        ;;
+      install-gdm-theme)
+        task_install_gdm_theme
+        ;;
+      create-user)
+        task_create_user
+        ;;
+      modify-user)
+        task_modify_user
+        ;;
+      manage-package-sources)
+        task_manage_package_sources
+        ;;
+      install-base)
+        task_install_base
+        ;;
+      install-system)
+        task_install_system
+        ;;
+      *)
+        echo "$SELF_NAME: require a valid task" >&2
+        exit 1
+        ;;
+    esac
+
+  fi
 }
 
 function check_root_privileges {
 
   if [[ $(whoami) != 'root' ]]; then
 
-    echo 'Require root privileges' >&2
+    echo "$SELF_NAME: require root privileges" >&2
     exit 1
 
   fi
@@ -87,7 +138,7 @@ function check_username {
 
   if [[ -z "$USERNAME" ]] || ! echo "$USERNAME" | grep -qE "$NAME_REGEX"; then
 
-    echo 'Require valid username' >&2
+    echo "$SELF_NAME: require valid username" >&2
     exit 1
 
   fi
@@ -99,7 +150,7 @@ function check_username_exists {
 
     if ! $1; then
 
-      echo 'The username has already been taken' >&2
+      echo "$SELF_NAME: the username has already been taken" >&2
       exit 1
 
     fi
@@ -108,7 +159,7 @@ function check_username_exists {
 
     if $1; then
 
-      echo 'The username does not exist' >&2
+      echo "$SELF_NAME: the username does not exist" >&2
       exit 1
 
     fi
@@ -120,7 +171,7 @@ function check_codename {
 
   if [[ -z "$CODENAME" ]] || ! echo "$CODENAME" | grep -qE '^[a-z]*$'; then
 
-    echo 'Require valid Ubuntu codename' >&2
+    echo "$SELF_NAME: require valid Ubuntu codename" >&2
     exit 1
 
   fi
@@ -136,7 +187,7 @@ function check_software_bundle_names {
         [[ ${BARRAY[$i]} != 'laptop' ]] && \
         [[ ${BARRAY[$i]} != 'web' ]]; then
 
-      echo 'Require valid bundle names [virt, dev, desktop, laptop, web]' >&2
+      echo "$SELF_NAME: require valid bundle names [virt, dev, desktop, laptop, web]" >&2
       exit 1
 
     fi
@@ -148,14 +199,14 @@ function check_mounting {
 
   if [[ -z "$DEV_ROOT" ]] || [[ "$DEV_ROOT" != /dev/* ]] || [[ ! -b "$DEV_ROOT" ]] || mount | grep -q "$DEV_ROOT"; then
 
-    echo 'Require unmounted device file for /' >&2
+    echo "$SELF_NAME: require unmounted device file for /" >&2
     exit 1
 
   fi
 
   if [[ -z "$DEV_HOME" ]] || [[ "$DEV_HOME" != /dev/* ]] || [[ ! -b "$DEV_HOME" ]]; then
 
-    echo 'Require device file for /home' >&2
+    echo "$SELF_NAME: require device file for /home" >&2
     exit 1
 
   fi
@@ -499,11 +550,9 @@ function task_install_system {
   check_mounting
   check_software_bundle_names
 
-  # set some variables
+  # set path to mounting point
   CHROOT=/mnt/ubuntu-$(cat '/proc/sys/kernel/random/uuid')
   CHHOME=$CHROOT/home
-  SELF_PATH=$(readlink -f "$0")
-  SELF_NAME=$(basename "$SELF_PATH")
 
   # format $DEV_ROOT
   mkfs.ext4 "$DEV_ROOT"
@@ -536,7 +585,7 @@ function task_install_system {
   rmdir "$CHROOT"
 
   # show that we are done here
-  echo "Done."
+  echo "$SELF_NAME: done."
 }
 
 function installation {
@@ -570,10 +619,10 @@ function installation {
   install_core_system
 
   # manage package sources
-  chroot "$CHROOT" "$SELF_NAME" -t manage-package-sources
+  chroot "$CHROOT" "$SELF_NAME" manage-package-sources
 
   # install software
-  chroot "$CHROOT" "$SELF_NAME" -t install-base -b "$BUNDLES"
+  chroot "$CHROOT" "$SELF_NAME" install-base -b "$BUNDLES"
 
   # do some modifications for desktop environments
   if [[ ${BARRAY[*]} =~ 'desktop' ]]; then
@@ -582,10 +631,10 @@ function installation {
     chroot "$CHROOT" flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 
     # install helper scripts
-    chroot "$CHROOT" "$SELF_NAME" -t install-desktop-helpers
+    chroot "$CHROOT" "$SELF_NAME" install-desktop-helpers
 
     # install default GDM theme
-    chroot "$CHROOT" "$SELF_NAME" -t install-gdm-theme
+    chroot "$CHROOT" "$SELF_NAME" install-gdm-theme
 
     # modify default GNOME settings
     install_default_gnome_settings
@@ -593,13 +642,13 @@ function installation {
   fi
 
   # create user
-  chroot "$CHROOT" "$SELF_NAME" -t create-user -u "$USERNAME"
+  chroot "$CHROOT" "$SELF_NAME" create-user -u "$USERNAME"
 
   # flush the cache
   sync
 
   # login to shell for diagnostic purposes
-  echo 'You are now logged in to the chroot environment for diagnostic purposes. Press Ctrl-D to escape.'
+  echo "$SELF_NAME: You are now logged in to the chroot environment for diagnostic purposes. Press Ctrl-D to escape."
   chroot "$CHROOT" /bin/bash
 
   # flush the cache
@@ -898,6 +947,36 @@ EOF
 
   # update dconf inside chroot
   chroot "$CHROOT" dconf update
+}
+
+function show_help {
+
+  echo "Usage: $SELF_NAME <task>"
+  echo "   ( -u | --username ) <your username>"
+  echo "   ( -c | --codename ) <Ubuntu codename: bionic|cosmic|...>"
+  echo "   ( -b | --bundles  ) <desktop,dev,...>"
+  echo "   ( -x | --dev-root ) <block device file for system partition '/'>"
+  echo "   ( -y | --dev-home ) <block device file for home partition '/home'>"
+  echo ""
+  echo "Show this text: $SELF_NAME ( -h | --help )"
+  echo ""
+  echo "Tasks:"
+  echo "   * install-script: install the newest version of this script"
+  echo "   * install-desktop-helpers: install helper scripts for desktops"
+  echo "   * install-gdm-theme: install default gdm theme"
+  echo "   * create-user: create user with extra groups and home-directory"
+  echo "   * modify-user: add extra groups to user and create home-directory"
+  echo "   * manage-package-sources: add package sources"
+  echo "   * install-base: install bundles and tools for a general purpose system"
+  echo "   * install-system: install Ubuntu to block device files"
+  echo ""
+  echo "Software bundles:"
+  echo "   * virt: QEMU/KVM with extended tooling"
+  echo "   * dev: basic equipment for software developers"
+  echo "   * desktop: minimal GNOME desktop"
+  echo "   * laptop: power saving tools for mobile devices"
+  echo "   * web: server and proxy for web"
+  echo ""
 }
 
 main "$@"

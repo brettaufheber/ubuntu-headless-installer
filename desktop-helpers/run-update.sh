@@ -12,10 +12,10 @@ snap refresh
 flatpak -y update
 
 # update helper scripts
-ubuntu-installer.sh -t install-desktop-helpers
+ubuntu-installer.sh install-desktop-helpers
 
 # update GDM theme
-ubuntu-installer.sh -t install-gdm-theme
+ubuntu-installer.sh install-gdm-theme
 
 # update installer script AT THE END
-ubuntu-installer.sh -t install-script
+ubuntu-installer.sh install-script

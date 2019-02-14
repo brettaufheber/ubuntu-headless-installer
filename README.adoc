@@ -10,10 +10,9 @@ Download new versions from the Git repository https://github.com/brettaufheber/u
 
 [source]
 ----
-sudo ubuntu-installer.sh \
-  -t install-system \
+sudo ubuntu-installer.sh install-system \
   -u <your username> \
-  -c <Ubuntu codename: bionic|artful|...> \
+  -c <Ubuntu codename: bionic|cosmic|...> \
   -b <optional software bundles: desktop,dev,...> \
   -x <block device file for system partition '/': /dev/...> \
   -y <block device file for home partition '/home': /dev/...>
