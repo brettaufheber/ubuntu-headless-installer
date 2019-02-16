@@ -550,45 +550,11 @@ function task_install_system {
   check_mounting
   check_software_bundle_names
 
-  # set path to mounting point
-  CHROOT=/mnt/ubuntu-$(cat '/proc/sys/kernel/random/uuid')
-  CHHOME=$CHROOT/home
-
   # format $DEV_ROOT
   mkfs.ext4 "$DEV_ROOT"
 
-  # mount $DEV_ROOT
-  mkdir -p "$CHROOT"
-  mount "$DEV_ROOT" "$CHROOT"
-
-  # mount $DEV_HOME
-  if mount | grep -q "$DEV_HOME"; then
-
-    HOME_PATH=$(df "$DEV_HOME" | grep -oE '(/[[:alnum:]]+)+$' | head -1)
-
-    mkdir -p "$CHHOME"
-    mount -o bind "$HOME_PATH" "$CHHOME"
-
-  else
-
-    mkdir -p "$CHHOME"
-    mount "$DEV_HOME" "$CHHOME"
-
-  fi
-
-  # call installation routine
-  installation
-
-  # unmount everything
-  umount "$CHHOME"
-  umount "$CHROOT"
-  rmdir "$CHROOT"
-
-  # show that we are done here
-  echo "$SELF_NAME: done."
-}
-
-function installation {
+  # mount "/" and "/home"
+  mounting_step_1
 
   # install minimal system without kernel
   debootstrap --arch=amd64 "$CODENAME" "$CHROOT" 'http://archive.ubuntu.com/ubuntu'
@@ -601,16 +567,8 @@ function installation {
   configure_system
   configure_network
 
-  # flush the cache
-  sync
-
-  # mount everything needed for chroot
-  mount -t proc /proc "$CHROOT/proc"
-  mount -t sysfs /sys "$CHROOT/sys"
-  mount -o bind /dev/ "$CHROOT/dev"
-  mount -o bind /dev/pts "$CHROOT/dev/pts"
-  mount -o bind /run "$CHROOT/run"
-  mount -o bind /tmp "$CHROOT/tmp"
+  # mount OS resources into chroot environment
+  mounting_step_2
 
   # configure packages
   configure_packages
@@ -644,23 +602,16 @@ function installation {
   # create user
   chroot "$CHROOT" "$SELF_NAME" create-user -u "$USERNAME"
 
-  # flush the cache
-  sync
-
   # login to shell for diagnostic purposes
   echo "$SELF_NAME: You are now logged in to the chroot environment for diagnostic purposes. Press Ctrl-D to escape."
   chroot "$CHROOT" /bin/bash
 
-  # flush the cache
-  sync
-
   # unmount everything
-  umount -l "$CHROOT/tmp"
-  umount -l "$CHROOT/run"
-  umount -l "$CHROOT/dev/pts"
-  umount -l "$CHROOT/dev"
-  umount -l "$CHROOT/sys"
-  umount -l "$CHROOT/proc"
+  unmounting_step_2
+  unmounting_step_1
+
+  # show that we are done here
+  echo "$SELF_NAME: done."
 }
 
 function configure_system {
@@ -979,6 +930,107 @@ function show_help {
   echo ""
 }
 
-main "$@"
+function mounting_step_1 {
 
+  # increment CLEANUP_LEVEL
+  CLEANUP_LEVEL=1
+
+  # set path to mounting point
+  CHROOT=/mnt/ubuntu-$(cat '/proc/sys/kernel/random/uuid')
+  CHHOME=$CHROOT/home
+
+  # mount $DEV_ROOT
+  mkdir -p "$CHROOT"
+  mount "$DEV_ROOT" "$CHROOT"
+
+  # mount $DEV_HOME
+  if mount | grep -q "$DEV_HOME"; then
+
+    HOME_PATH=$(df "$DEV_HOME" | grep -oE '(/[[:alnum:]]+)+$' | head -1)
+
+    mkdir -p "$CHHOME"
+    mount -o bind "$HOME_PATH" "$CHHOME"
+
+  else
+
+    mkdir -p "$CHHOME"
+    mount "$DEV_HOME" "$CHHOME"
+
+  fi
+}
+
+function unmounting_step_1 {
+
+  # check whether the step is required or not
+  if [[ $CLEANUP_LEVEL -ge 1 ]]; then
+
+    # unmount home directory and directory root
+    umount "$CHHOME"
+    umount "$CHROOT"
+    rmdir "$CHROOT"
+
+  fi
+}
+
+function mounting_step_2 {
+
+  # increment CLEANUP_LEVEL
+  CLEANUP_LEVEL=2
+
+  # flush the cache
+  sync
+
+  # mount resources needed for chroot
+  mount -t proc /proc "$CHROOT/proc"
+  mount -t sysfs /sys "$CHROOT/sys"
+  mount -o bind /dev/ "$CHROOT/dev"
+  mount -o bind /dev/pts "$CHROOT/dev/pts"
+  mount -o bind /run "$CHROOT/run"
+  mount -o bind /tmp "$CHROOT/tmp"
+}
+
+function unmounting_step_2 {
+
+  # check whether the step is required or not
+  if [[ $CLEANUP_LEVEL -ge 2 ]]; then
+
+    # flush the cache
+    sync
+
+    # unmount resources
+    umount -l "$CHROOT/tmp"
+    umount -l "$CHROOT/run"
+    umount -l "$CHROOT/dev/pts"
+    umount -l "$CHROOT/dev"
+    umount -l "$CHROOT/sys"
+    umount -l "$CHROOT/proc"
+
+  fi
+}
+
+function error_trap {
+
+  # cleanup
+  unmounting_step_2
+  unmounting_step_1
+
+  echo "$SELF_NAME: script stopped caused by unexpected return code $1 at line $2" >&2
+  exit 3
+}
+
+function interrupt_trap {
+
+  # cleanup
+  unmounting_step_2
+  unmounting_step_1
+
+  echo "$SELF_NAME: script interrupted by signal" >&2
+  exit 2
+}
+
+set -eEo pipefail
+CLEANUP_LEVEL=0
+trap 'RC=$?; error_trap "$RC" "$LINENO"' ERR
+trap 'interrupt_trap' INT
+main "$@"
 exit 0
