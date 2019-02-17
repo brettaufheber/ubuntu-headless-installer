@@ -85,9 +85,17 @@ function main {
 
     fi
 
-    # create bundles array
-    readarray -td ',' BARRAY <<< "$BUNDLES"
-    for i in "${!BARRAY[@]}"; do BARRAY[$i]=$(echo "${BARRAY[$i]}" | tr -d '[:space:]'); done
+    # create bundle array
+    if [[ -z "$BUNDLES" ]]; then
+
+      declare -a BARRAY
+
+    else
+
+      readarray -td ',' BARRAY <<< "$BUNDLES"
+      for i in "${!BARRAY[@]}"; do BARRAY[$i]=$(echo "${BARRAY[$i]}" | tr -d '[:space:]'); done
+
+    fi
 
     # select task
     case "$TASK" in
