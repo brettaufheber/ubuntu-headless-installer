@@ -374,6 +374,10 @@ function task_install_base {
   # install SSL support
   apt-get -y install openssl
 
+  # install alternative package management systems
+  apt-get -y install snapd
+  apt-get -y install flatpak
+
   # install OpenJDK JRE
   apt-get -y install openjdk-8-jre
 
@@ -473,15 +477,13 @@ function task_install_base {
     apt-get -y install gnome-contacts
     apt-get -y install gnome-calendar
     apt-get -y install gnome-sound-recorder
+    apt-get -y install gnome-software-plugin-snap
+    apt-get -y install gnome-software-plugin-flatpak
     apt-get -y install language-selector-gnome
     apt-get -y install ubuntu-restricted-extras
     apt-get -y install materia-gtk-theme
     apt-get -y install dconf-cli dconf-editor
     apt-get -y install gedit ghex
-
-    # install alternative package management systems
-    apt-get -y install snapd gnome-software-plugin-snap
-    apt-get -y install flatpak gnome-software-plugin-flatpak
 
     # install scanner and printer support
     apt-get -y install simple-scan
