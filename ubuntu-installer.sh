@@ -558,6 +558,9 @@ function task_install_system {
   check_mounting
   check_software_bundle_names
 
+  # set $HOME variable for chroot
+  HOME='/tmp'
+
   # format $DEV_ROOT
   mkfs.ext4 "$DEV_ROOT"
 
