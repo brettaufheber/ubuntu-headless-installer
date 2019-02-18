@@ -354,8 +354,8 @@ function task_install_base {
 
   # install main packages
   apt-get -y install ubuntu-server ubuntu-standard
+  apt-get -y install lxc debootstrap bridge-utils
   apt-get -y install aptitude
-  apt-get -y install debootstrap
 
   # install version control system
   apt-get -y install git
@@ -373,10 +373,6 @@ function task_install_base {
 
   # install SSL support
   apt-get -y install openssl
-
-  # install container support
-  apt-get -y install lxd lxc
-  apt-get -y install docker.io
 
   # install OpenJDK JRE
   apt-get -y install openjdk-8-jre
