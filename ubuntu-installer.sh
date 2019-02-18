@@ -134,7 +134,7 @@ function main {
 
 function check_root_privileges {
 
-  if [[ $(whoami) != 'root' ]]; then
+  if [[ $EUID -ne 0 ]]; then
 
     echo "$SELF_NAME: require root privileges" >&2
     exit 1
