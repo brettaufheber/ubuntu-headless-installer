@@ -108,6 +108,9 @@ function main {
       install-gdm-theme)
         task_install_gdm_theme
         ;;
+      update)
+        task_update
+        ;;
       create-user)
         task_create_user
         ;;
@@ -271,6 +274,35 @@ function task_install_gdm_theme {
   cp \
     '/usr/share/themes/Materia-light/gnome-shell/gnome-shell.css' \
     '/usr/share/gnome-shell/theme/ubuntu.css'
+}
+
+function task_update {
+
+  # check arguments
+  check_root_privileges
+  check_software_bundle_names
+
+  # update via APT package manager
+  apt-get update
+  apt-get -y dist-upgrade
+  apt-get -y autoremove --purge
+
+  # update via Snappy package manager
+  snap refresh
+
+  # update via Flatpak package manager
+  flatpak -y update
+
+  # do this only for desktop environments
+  if [[ ${BARRAY[*]} =~ 'desktop' ]]; then
+
+    # update helper scripts
+    ubuntu-installer.sh install-desktop-helpers
+
+    # update GDM theme
+    ubuntu-installer.sh install-gdm-theme
+
+  fi
 }
 
 function task_create_user {
@@ -924,6 +956,7 @@ function show_help {
   echo "   * install-script: install the newest version of this script"
   echo "   * install-desktop-helpers: install helper scripts for desktops"
   echo "   * install-gdm-theme: install default gdm theme"
+  echo "   * update: update the system with all package managers"
   echo "   * create-user: create user with extra groups and home-directory"
   echo "   * modify-user: add extra groups to user and create home-directory"
   echo "   * manage-package-sources: add package sources"
