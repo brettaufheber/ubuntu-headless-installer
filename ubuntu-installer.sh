@@ -421,7 +421,7 @@ function task_install_base {
 
     # install machine emulator and virtualizer with tooling
     apt-get -y install qemu qemu-kvm
-    apt-get -y install virtinst libvirt-bin
+    apt-get -y install virtinst libvirt-daemon-system
 
   fi
 
