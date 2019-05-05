@@ -271,9 +271,21 @@ function task_install_gdm_theme {
     --target='/usr/share/gnome-shell/gnome-shell-theme.gresource' \
     '/usr/share/themes/Materia-light/gnome-shell/gnome-shell-theme.gresource.xml'
 
-  cp \
-    '/usr/share/themes/Materia-light/gnome-shell/gnome-shell.css' \
-    '/usr/share/gnome-shell/theme/ubuntu.css'
+  if [[ -f '/usr/share/gnome-shell/theme/ubuntu.css' ]]; then
+
+    cp \
+      '/usr/share/themes/Materia-light/gnome-shell/gnome-shell.css' \
+      '/usr/share/gnome-shell/theme/ubuntu.css'
+
+  fi
+
+  if [[ -f '/usr/share/gnome-shell/theme/Yaru/gnome-shell.css' ]]; then
+
+    cp \
+      '/usr/share/themes/Materia-light/gnome-shell/gnome-shell.css' \
+      '/usr/share/gnome-shell/theme/Yaru/gnome-shell.css'
+
+  fi
 }
 
 function task_update {
