@@ -105,9 +105,6 @@ function main {
       install-desktop-helpers)
         task_install_desktop_helpers
         ;;
-      install-gdm-theme)
-        task_install_gdm_theme
-        ;;
       update)
         task_update
         ;;
@@ -261,33 +258,6 @@ function task_install_desktop_helpers {
   rm -rf "$TEMPDIR"
 }
 
-function task_install_gdm_theme {
-
-  # check arguments
-  check_root_privileges
-
-  glib-compile-resources \
-    --sourcedir='/usr/share/themes/Materia-light/gnome-shell' \
-    --target='/usr/share/gnome-shell/gnome-shell-theme.gresource' \
-    '/usr/share/themes/Materia-light/gnome-shell/gnome-shell-theme.gresource.xml'
-
-  if [[ -f '/usr/share/gnome-shell/theme/ubuntu.css' ]]; then
-
-    cp \
-      '/usr/share/themes/Materia-light/gnome-shell/gnome-shell.css' \
-      '/usr/share/gnome-shell/theme/ubuntu.css'
-
-  fi
-
-  if [[ -f '/usr/share/gnome-shell/theme/Yaru/gnome-shell.css' ]]; then
-
-    cp \
-      '/usr/share/themes/Materia-light/gnome-shell/gnome-shell.css' \
-      '/usr/share/gnome-shell/theme/Yaru/gnome-shell.css'
-
-  fi
-}
-
 function task_update {
 
   # check arguments
@@ -310,9 +280,6 @@ function task_update {
 
     # update helper scripts
     ubuntu-installer.sh install-desktop-helpers
-
-    # update GDM theme
-    ubuntu-installer.sh install-gdm-theme
 
   fi
 }
@@ -529,6 +496,12 @@ function task_install_base {
     apt-get -y install dconf-cli dconf-editor
     apt-get -y install gedit ghex
 
+    # install display manager
+    apt-get -y install lightdm
+    apt-get -y install lightdm-settings
+    apt-get -y install slick-greeter
+    apt-get -y install gnome-screensaver
+
     # install scanner and printer support
     apt-get -y install simple-scan
     apt-get -y install cups cups-client cups-bsd
@@ -643,9 +616,6 @@ function task_install_system {
 
     # install helper scripts
     chroot "$CHROOT" "$SELF_NAME" install-desktop-helpers
-
-    # install default GDM theme
-    chroot "$CHROOT" "$SELF_NAME" install-gdm-theme
 
     # modify default GNOME settings
     install_default_gnome_settings
@@ -967,7 +937,6 @@ function show_help {
   echo "Tasks:"
   echo "   * install-script: install the newest version of this script"
   echo "   * install-desktop-helpers: install helper scripts for desktops"
-  echo "   * install-gdm-theme: install default gdm theme"
   echo "   * update: update the system with all package managers"
   echo "   * create-user: create user with extra groups and home-directory"
   echo "   * modify-user: add extra groups to user and create home-directory"
