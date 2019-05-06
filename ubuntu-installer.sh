@@ -359,6 +359,9 @@ function task_install_base {
   check_root_privileges
   check_software_bundle_names
 
+  # disable interactive interfaces
+  export DEBIAN_FRONTEND=noninteractive
+
   # update installed software
   apt-get -y dist-upgrade
   apt-get -y autoremove --purge
@@ -366,7 +369,15 @@ function task_install_base {
   # install main packages
   apt-get -y install ubuntu-server ubuntu-standard
   apt-get -y install lxc debootstrap bridge-utils
+  apt-get -y install software-properties-common
+  apt-get -y install debconf-utils
   apt-get -y install aptitude
+
+  # set default values for packages
+  echo wireshark-common wireshark-common/install-setuid select true | debconf-set-selections
+  echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
+  echo gdm3 shared/default-x-display-manager select lightdm | debconf-set-selections
+  echo lightdm shared/default-x-display-manager select lightdm | debconf-set-selections
 
   # install version control system
   apt-get -y install git
