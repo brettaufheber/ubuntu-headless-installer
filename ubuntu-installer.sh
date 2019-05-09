@@ -93,7 +93,7 @@ function main {
     else
 
       readarray -td ',' BARRAY <<< "$BUNDLES"
-      for i in "${!BARRAY[@]}"; do BARRAY[$i]=$(echo "${BARRAY[$i]}" | tr -d '[:space:]'); done
+      for i in "${!BARRAY[@]}"; do BARRAY[$i]="$(echo "${BARRAY[$i]}" | tr -d '[:space:]')"; done
 
     fi
 
@@ -156,7 +156,7 @@ function check_username_exists {
 
   if getent passwd "$USERNAME" > /dev/null; then
 
-    if ! $1; then
+    if ! "$1"; then
 
       echo "$SELF_NAME: the username has already been taken" >&2
       exit 1
@@ -165,7 +165,7 @@ function check_username_exists {
 
   else
 
-    if $1; then
+    if "$1"; then
 
       echo "$SELF_NAME: the username does not exist" >&2
       exit 1
@@ -248,7 +248,7 @@ function task_install_desktop_helpers {
 
   for i in "$TEMPDIR/desktop-helpers"/*; do
 
-    f=$(basename "$i")
+    f="$(basename "$i")"
 
     cp -v "$i" "$BINDIR"
     chmod a+x "$BINDIR/$f"
@@ -488,8 +488,8 @@ function task_install_base {
 
     # get current system language
     . /etc/default/locale
-    SYSLANG=$(echo "$LANG" | grep -oE '^([a-zA-Z]+)' | sed -r 's/^(C|POSIX)$/en/')
-    SYSLANG=${SYSLANG:-"en"}
+    SYSLANG="$(echo "$LANG" | grep -oE '^([a-zA-Z]+)' | sed -r 's/^(C|POSIX)$/en/')"
+    SYSLANG="${SYSLANG:-'en'}"
 
     # install GTK+ libraries
     apt-get -y install libgtk-3-dev libgtk2.0-dev
@@ -651,8 +651,8 @@ function task_install_system {
 function configure_system {
 
   # get UUID of each partition
-  UUID_ROOT=$(blkid "$DEV_ROOT" | grep -oE 'UUID="[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}' | cut -c 7-)
-  UUID_HOME=$(blkid "$DEV_HOME" | grep -oE 'UUID="[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}' | cut -c 7-)
+  UUID_ROOT="$(blkid "$DEV_ROOT" | grep -oE 'UUID="[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}' | cut -c 7-)"
+  UUID_HOME="$(blkid "$DEV_HOME" | grep -oE 'UUID="[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}' | cut -c 7-)"
 
   # set hostname
   echo 'ubuntu' > "$CHROOT/etc/hostname"
@@ -970,8 +970,8 @@ function mounting_step_1 {
   CLEANUP_LEVEL=1
 
   # set path to mounting point
-  CHROOT=/mnt/ubuntu-$(cat '/proc/sys/kernel/random/uuid')
-  CHHOME=$CHROOT/home
+  CHROOT="/mnt/ubuntu-$(cat '/proc/sys/kernel/random/uuid')"
+  CHHOME="$CHROOT/home"
 
   # mount $DEV_ROOT
   mkdir -p "$CHROOT"
@@ -980,7 +980,7 @@ function mounting_step_1 {
   # mount $DEV_HOME
   if mount | grep -q "$DEV_HOME"; then
 
-    HOME_PATH=$(df "$DEV_HOME" | grep -oE '(/[[:alnum:]]+)+$' | head -1)
+    HOME_PATH="$(df "$DEV_HOME" | grep -oE '(/[[:alnum:]]+)+$' | head -1)"
 
     mkdir -p "$CHHOME"
     mount -o bind "$HOME_PATH" "$CHHOME"

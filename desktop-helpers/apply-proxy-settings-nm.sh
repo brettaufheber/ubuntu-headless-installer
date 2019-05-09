@@ -33,10 +33,10 @@ gsettings set org.gnome.system.proxy mode "none"
 # set HTTP proxy
 if [ -n "$http_proxy" ]; then
 
-  host=$(parse_uri "$http_proxy" 'hostname')
-  port=$(parse_uri "$http_proxy" 'port')
-  username=$(parse_uri "$http_proxy" 'username')
-  password=$(parse_uri "$http_proxy" 'password')
+  host="$(parse_uri "$http_proxy" 'hostname')"
+  port="$(parse_uri "$http_proxy" 'port')"
+  username="$(parse_uri "$http_proxy" 'username')"
+  password="$(parse_uri "$http_proxy" 'password')"
 
   gsettings set org.gnome.system.proxy mode "manual"
   gsettings set org.gnome.system.proxy.http host "$host"
@@ -61,8 +61,8 @@ fi
 # set HTTPS proxy
 if [ -n "$https_proxy" ]; then
 
-  host=$(parse_uri "$https_proxy" 'hostname')
-  port=$(parse_uri "$https_proxy" 'port')
+  host="$(parse_uri "$https_proxy" 'hostname')"
+  port="$(parse_uri "$https_proxy" 'port')"
 
   gsettings set org.gnome.system.proxy mode "manual"
   gsettings set org.gnome.system.proxy.https host "$host"
@@ -73,8 +73,8 @@ fi
 # set FTP proxy
 if [ -n "$ftp_proxy" ]; then
 
-  host=$(parse_uri "$ftp_proxy" 'hostname')
-  port=$(parse_uri "$ftp_proxy" 'port')
+  host="$(parse_uri "$ftp_proxy" 'hostname')"
+  port="$(parse_uri "$ftp_proxy" 'port')"
 
   gsettings set org.gnome.system.proxy mode "manual"
   gsettings set org.gnome.system.proxy.ftp host "$host"
@@ -85,8 +85,8 @@ fi
 # set all socks proxy
 if [ -n "$all_proxy" ]; then
 
-  host=$(parse_uri "$all_proxy" 'hostname')
-  port=$(parse_uri "$all_proxy" 'port')
+  host="$(parse_uri "$all_proxy" 'hostname')"
+  port="$(parse_uri "$all_proxy" 'port')"
 
   gsettings set org.gnome.system.proxy mode "manual"
   gsettings set org.gnome.system.proxy.socks host "$host"
@@ -97,7 +97,7 @@ fi
 # set ignore-hosts
 if [ -n "$no_proxy" ]; then
 
-  hosts=$(parse_array "$no_proxy")
+  hosts="$(parse_array "$no_proxy")"
 
   gsettings set org.gnome.system.proxy ignore-hosts "$hosts"
 
