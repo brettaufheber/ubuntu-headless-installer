@@ -631,6 +631,15 @@ function task_install_system {
     # modify default GNOME settings
     install_default_gnome_settings
 
+    # set default theme for slick greeter
+    local BGIMAGE="$(chroot "$CHROOT" ls -1 /usr/share/backgrounds/*ubuntu.png | head -1)"
+    echo '[Greeter]' > "$CHROOT/etc/lightdm/slick-greeter.conf"
+    echo "background=$BGIMAGE"  >> "$CHROOT/etc/lightdm/slick-greeter.conf"
+    echo 'theme-name=Materia-dark' >> "$CHROOT/etc/lightdm/slick-greeter.conf"
+    echo 'icon-theme-name=Adwaita' >> "$CHROOT/etc/lightdm/slick-greeter.conf"
+    echo 'background-color=#000000' >> "$CHROOT/etc/lightdm/slick-greeter.conf"
+    echo 'draw-grid=true' >> "$CHROOT/etc/lightdm/slick-greeter.conf"
+
   fi
 
   # create user
