@@ -498,7 +498,6 @@ function task_install_base {
     apt-get -y install gnome-core
     apt-get -y install gnome-contacts
     apt-get -y install gnome-calendar
-    apt-get -y install gnome-sound-recorder
     apt-get -y install gnome-software-plugin-snap
     apt-get -y install gnome-software-plugin-flatpak
     apt-get -y install language-selector-gnome
@@ -522,6 +521,9 @@ function task_install_base {
     apt-get -y install fonts-open-sans
     apt-get -y install fonts-dejavu
     apt-get -y install fonts-ubuntu fonts-ubuntu-console
+
+    # install audio recorder
+    apt-get -y install audacity
 
     # install webcam tooling
     apt-get -y install guvcview
