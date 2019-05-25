@@ -272,11 +272,11 @@ function task_update {
   # update via Snappy package manager
   snap refresh
 
-  # update via Flatpak package manager
-  flatpak -y update
-
   # do this only for desktop environments
   if [[ ${BARRAY[*]} =~ 'desktop' ]]; then
+
+    # update via Flatpak package manager
+    flatpak -y update
 
     # update helper scripts
     ubuntu-installer.sh install-desktop-helpers
@@ -396,9 +396,8 @@ function task_install_base {
   # install SSL support
   apt-get -y install openssl
 
-  # install alternative package management systems
+  # install support of snap packages
   apt-get -y install snapd
-  apt-get -y install flatpak
 
   # install OpenJDK JRE
   apt-get -y install openjdk-8-jre
@@ -499,7 +498,7 @@ function task_install_base {
     apt-get -y install gnome-contacts
     apt-get -y install gnome-calendar
     apt-get -y install gnome-software-plugin-snap
-    apt-get -y install gnome-software-plugin-flatpak
+    apt-get -y install gnome-software-plugin-flatpak flatpak
     apt-get -y install language-selector-gnome
     apt-get -y install ubuntu-restricted-extras
     apt-get -y install materia-gtk-theme
