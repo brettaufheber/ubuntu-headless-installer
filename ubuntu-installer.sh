@@ -678,7 +678,7 @@ function configure_system {
   echo "UUID=$UUID_HOME   /home           ext4     defaults                       0      2" >> "$CHROOT/etc/fstab"
   echo "proc              /proc           proc     defaults                       0      0" >> "$CHROOT/etc/fstab"
   echo "sys               /sys            sysfs    defaults                       0      0" >> "$CHROOT/etc/fstab"
-  echo "tmpfs             /tmp            tmpfs    defaults,size=20%              0      0" >> "$CHROOT/etc/fstab"
+  echo "tmpfs             /tmp            tmpfs    defaults,size=40%              0      0" >> "$CHROOT/etc/fstab"
 
   # modify vimrc file
   echo '' >> "$CHROOT/etc/vim/vimrc"
