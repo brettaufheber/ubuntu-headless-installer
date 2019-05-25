@@ -399,8 +399,8 @@ function task_install_base {
   # install support of snap packages
   apt-get -y install snapd
 
-  # install OpenJDK JRE
-  apt-get -y install openjdk-8-jre
+  # install OpenJDK JRE (headless)
+  apt-get -y install openjdk-8-jre-headless
 
   # install everything else needed by a simple general purpose system
   aptitude -y install ~pstandard ~pimportant ~prequired
@@ -520,6 +520,9 @@ function task_install_base {
     apt-get -y install fonts-open-sans
     apt-get -y install fonts-dejavu
     apt-get -y install fonts-ubuntu fonts-ubuntu-console
+
+    # install OpenJDK JRE
+    apt-get -y install openjdk-8-jre
 
     # install audio recorder
     apt-get -y install audacity
