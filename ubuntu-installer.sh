@@ -3,6 +3,7 @@
 function main {
 
   # set default values and configuration
+  HOME="/tmp"
   SELF_PATH="$(readlink -f "$0")"
   SELF_NAME="$(basename "$SELF_PATH")"
   NAME_REGEX='^[a-z][-a-z0-9]*$'
@@ -606,9 +607,6 @@ function task_install_system {
   check_mounting
   check_software_bundle_names
 
-  # set $HOME variable for chroot
-  HOME='/tmp'
-
   # format $DEV_ROOT
   mkfs.ext4 "$DEV_ROOT"
 
@@ -1030,8 +1028,8 @@ function show_help {
 
 function mounting_step_1 {
 
-  # increment CLEANUP_LEVEL
-  CLEANUP_LEVEL=1
+  # modify CLEANUP_MASK
+  CLEANUP_MASK=$(( $CLEANUP_MASK | 1 ))
 
   # set path to mounting point
   CHROOT="/mnt/ubuntu-$(cat '/proc/sys/kernel/random/uuid')"
@@ -1060,7 +1058,7 @@ function mounting_step_1 {
 function unmounting_step_1 {
 
   # check whether the step is required or not
-  if [[ $CLEANUP_LEVEL -ge 1 ]]; then
+  if [[ $(( $CLEANUP_MASK & 1 )) -ne 0 ]]; then
 
     # unmount home directory and directory root
     umount "$CHHOME"
@@ -1072,8 +1070,8 @@ function unmounting_step_1 {
 
 function mounting_step_2 {
 
-  # increment CLEANUP_LEVEL
-  CLEANUP_LEVEL=2
+  # modify CLEANUP_MASK
+  CLEANUP_MASK=$(( $CLEANUP_MASK | 2 ))
 
   # flush the cache
   sync
@@ -1090,7 +1088,7 @@ function mounting_step_2 {
 function unmounting_step_2 {
 
   # check whether the step is required or not
-  if [[ $CLEANUP_LEVEL -ge 2 ]]; then
+  if [[ $(( $CLEANUP_MASK & 2 )) -ne 0 ]]; then
 
     # flush the cache
     sync
@@ -1127,7 +1125,7 @@ function interrupt_trap {
 }
 
 set -eEo pipefail
-CLEANUP_LEVEL=0
+CLEANUP_MASK=0
 trap 'RC=$?; error_trap "$RC" "$LINENO"' ERR
 trap 'interrupt_trap' INT
 main "$@"
