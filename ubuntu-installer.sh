@@ -142,6 +142,9 @@ function main {
       install-system)
         task_install_system
         ;;
+      install-container-image)
+        task_install_container_image
+        ;;
       *)
         echo "$SELF_NAME: require a valid task" >&2
         exit 1
@@ -613,12 +616,8 @@ function task_install_system {
   # mount "/" and "/home"
   mounting_step_1
 
-  # install minimal system without kernel
-  debootstrap --arch=amd64 "$CODENAME" "$CHROOT" 'http://archive.ubuntu.com/ubuntu'
-
-  # make this script available
-  cp -f "$SELF_PATH" "$CHROOT/usr/local/sbin"
-  chmod a+x "$CHROOT/usr/local/sbin/$SELF_NAME"
+  # execute debootstrap
+  install_minimal_system
 
   # configuration before starting chroot
   configure_hosts
@@ -633,8 +632,8 @@ function task_install_system {
   # configure packages
   configure_packages
 
-  # install core system
-  install_core_system
+  # install requirements, kernel and bootloader
+  install_host_requirements
 
   # manage package sources
   chroot "$CHROOT" "$SELF_NAME" manage-package-sources
@@ -643,27 +642,7 @@ function task_install_system {
   chroot "$CHROOT" "$SELF_NAME" install-base -b "$BUNDLES"
 
   # do some modifications for desktop environments
-  if [[ ${BARRAY[*]} =~ 'desktop' ]]; then
-
-    # add flatpak remote: flathub
-    chroot "$CHROOT" flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-
-    # install helper scripts
-    chroot "$CHROOT" "$SELF_NAME" install-desktop-helpers
-
-    # modify default GNOME settings
-    install_default_gnome_settings
-
-    # set default theme for slick greeter
-    local BGIMAGE="$(chroot "$CHROOT" ls -1 /usr/share/backgrounds/*ubuntu.png | head -1)"
-    echo '[Greeter]' > "$CHROOT/etc/lightdm/slick-greeter.conf"
-    echo "background=$BGIMAGE"  >> "$CHROOT/etc/lightdm/slick-greeter.conf"
-    echo 'theme-name=Materia-dark' >> "$CHROOT/etc/lightdm/slick-greeter.conf"
-    echo 'icon-theme-name=Adwaita' >> "$CHROOT/etc/lightdm/slick-greeter.conf"
-    echo 'background-color=#000000' >> "$CHROOT/etc/lightdm/slick-greeter.conf"
-    echo 'draw-grid=true' >> "$CHROOT/etc/lightdm/slick-greeter.conf"
-
-  fi
+  configure_desktop
 
   # remove retrieved package files
   chroot "$CHROOT" apt-get clean
@@ -683,22 +662,121 @@ function task_install_system {
   echo "$SELF_NAME: done."
 }
 
+function task_install_container_image {
+
+  # check arguments
+  check_root_privileges
+  check_codename
+  check_software_bundle_names
+
+  # create temporary directory
+  local TEMPDIR="$(mktemp -d)"
+
+  # set root directory
+  CHROOT="$TEMPDIR/rootfs"
+
+  # create root directory
+  mkdir -p "$CHROOT"
+
+  # execute debootstrap
+  install_minimal_system
+
+  # configuration before starting chroot
+  configure_vim
+  configure_users
+
+  # mount OS resources into chroot environment
+  mounting_step_2
+
+  # configure packages
+  configure_packages
+
+  # install requirements
+  install_container_requirements
+
+  # manage package sources
+  chroot "$CHROOT" "$SELF_NAME" manage-package-sources
+
+  # install software
+  chroot "$CHROOT" "$SELF_NAME" install-base -b "$BUNDLES"
+
+  # do some modifications for desktop environments
+  configure_desktop
+
+  # remove retrieved package files
+  chroot "$CHROOT" apt-get clean
+
+  # unmount everything
+  unmounting_step_2
+
+  # define image name
+  local IMAGE_RELEASE="$(cat '/proc/sys/kernel/random/uuid' | tr -dc '[:alnum:]')"
+  local IMAGE_NAME="ubuntu-$CODENAME-$IMAGE_RELEASE"
+
+  # create metadata file
+  echo "architecture: x86_64" > "$TEMPDIR/metadata.yaml"
+  echo "creation_date: $(date +%s)" >> "$TEMPDIR/metadata.yaml"
+  echo "properties:" >> "$TEMPDIR/metadata.yaml"
+  echo "  architecture: x86_64" >> "$TEMPDIR/metadata.yaml"
+  echo "  description: Ubuntu $CODENAME with extended tooling" >> "$TEMPDIR/metadata.yaml"
+  echo "  os: ubuntu" >> "$TEMPDIR/metadata.yaml"
+  echo "  release: $CODENAME $IMAGE_RELEASE" >> "$TEMPDIR/metadata.yaml"
+  echo "templates:" >> "$TEMPDIR/metadata.yaml"
+  echo "  /etc/hosts:" >> "$TEMPDIR/metadata.yaml"
+  echo "    when:" >> "$TEMPDIR/metadata.yaml"
+  echo "      - create" >> "$TEMPDIR/metadata.yaml"
+  echo "      - copy" >> "$TEMPDIR/metadata.yaml"
+  echo "      - rename" >> "$TEMPDIR/metadata.yaml"
+  echo "    template: hosts.tpl" >> "$TEMPDIR/metadata.yaml"
+  echo "  /etc/hostname:" >> "$TEMPDIR/metadata.yaml"
+  echo "    when:" >> "$TEMPDIR/metadata.yaml"
+  echo "      - create" >> "$TEMPDIR/metadata.yaml"
+  echo "      - copy" >> "$TEMPDIR/metadata.yaml"
+  echo "      - rename" >> "$TEMPDIR/metadata.yaml"
+  echo "    template: hostname.tpl" >> "$TEMPDIR/metadata.yaml"
+
+  # create template directory
+  mkdir "$TEMPDIR/templates"
+
+  # create templates (use container name as hostname)
+  configure_hosts_template "{{ container.name }}" "$TEMPDIR/templates/hostname.tpl" "$TEMPDIR/templates/hosts.tpl"
+
+  # create tarballs for rootfs and metadata
+  tar -czf "$TEMPDIR/rootfs.tar.gz" -C "$CHROOT" .
+  tar -czf "$TEMPDIR/metadata.tar.gz" -C "$TEMPDIR" 'metadata.yaml' 'templates'
+
+  # install image
+  lxc image import "$TEMPDIR/metadata.tar.gz" "$TEMPDIR/rootfs.tar.gz" --alias "$IMAGE_NAME"
+
+  # remove temporary directory
+  rm -rf "$TEMPDIR"
+
+  # show that we are done here
+  echo "$SELF_NAME: image $IMAGE_NAME imported"
+}
+
 function configure_hosts {
 
+  # configure hosts with default arguments
+  configure_hosts_template "$HOSTNAME_NEW" "$CHROOT/etc/hostname" "$CHROOT/etc/hosts"
+}
+
+function configure_hosts_template {
+
   # edit /etc/hostname
-  echo "$HOSTNAME_NEW" > "$CHROOT/etc/hostname"
+  echo "$1" > "$2"
 
   # edit /etc/hosts
-  echo "127.0.0.1   localhost" > "$CHROOT/etc/hosts"
-  echo "127.0.1.1   $HOSTNAME_NEW" >> "$CHROOT/etc/hosts"
-  echo "" >> "$CHROOT/etc/hosts"
-  echo "# The following lines are desirable for IPv6 capable hosts" >> "$CHROOT/etc/hosts"
-  echo "::1         ip6-localhost ip6-loopback" >> "$CHROOT/etc/hosts"
-  echo "fe00::0     ip6-localnet" >> "$CHROOT/etc/hosts"
-  echo "ff00::0     ip6-mcastprefix" >> "$CHROOT/etc/hosts"
-  echo "ff02::1     ip6-allnodes" >> "$CHROOT/etc/hosts"
-  echo "ff02::2     ip6-allrouters" >> "$CHROOT/etc/hosts"
-  echo "ff02::3     ip6-allhosts" >> "$CHROOT/etc/hosts"
+  echo "127.0.0.1   localhost" > "$3"
+  echo "127.0.1.1   $1" >> "$3"
+  echo "" >> "$3"
+  echo "# The following lines are desirable for IPv6 capable hosts" >> "$3"
+  echo "::1         ip6-localhost ip6-loopback" >> "$3"
+  echo "fe00::0     ip6-localnet" >> "$3"
+  echo "ff00::0     ip6-mcastprefix" >> "$3"
+  echo "ff02::1     ip6-allnodes" >> "$3"
+  echo "ff02::2     ip6-allrouters" >> "$3"
+  echo "ff02::3     ip6-allhosts" >> "$3"
 }
 
 function configure_fstab {
@@ -848,7 +926,43 @@ EOF
   rm "$TEMPFILE"
 }
 
-function install_core_system {
+function configure_desktop {
+
+  # only apply if desktop bundle is selected
+  if [[ ${BARRAY[*]} =~ 'desktop' ]]; then
+
+    # add flatpak remote: flathub
+    chroot "$CHROOT" flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+
+    # install helper scripts
+    chroot "$CHROOT" "$SELF_NAME" install-desktop-helpers
+
+    # modify default GNOME settings
+    install_default_gnome_settings
+
+    # set default theme for slick greeter
+    local BGIMAGE="$(chroot "$CHROOT" ls -1 /usr/share/backgrounds/*ubuntu.png | head -1)"
+    echo '[Greeter]' > "$CHROOT/etc/lightdm/slick-greeter.conf"
+    echo "background=$BGIMAGE"  >> "$CHROOT/etc/lightdm/slick-greeter.conf"
+    echo 'theme-name=Materia-dark' >> "$CHROOT/etc/lightdm/slick-greeter.conf"
+    echo 'icon-theme-name=Adwaita' >> "$CHROOT/etc/lightdm/slick-greeter.conf"
+    echo 'background-color=#000000' >> "$CHROOT/etc/lightdm/slick-greeter.conf"
+    echo 'draw-grid=true' >> "$CHROOT/etc/lightdm/slick-greeter.conf"
+
+  fi
+}
+
+function install_minimal_system {
+
+  # install minimal system without kernel or bootloader
+  debootstrap --arch=amd64 "$CODENAME" "$CHROOT" 'http://archive.ubuntu.com/ubuntu'
+
+  # make this script available
+  cp -f "$SELF_PATH" "$CHROOT/usr/local/sbin"
+  chmod a+x "$CHROOT/usr/local/sbin/$SELF_NAME"
+}
+
+function install_host_requirements {
 
   # temporary file for this installation step
   local TEMPFILE="$(mktemp)"
@@ -856,6 +970,10 @@ function install_core_system {
   # write installation script
   echo '#!/bin/bash' > "$TEMPFILE"
   cat >> "$TEMPFILE" << 'EOF'
+
+# install main packages
+apt-get -y install debootstrap
+apt-get -y install software-properties-common
 
 # install Linux kernel and GRUB bootloader
 apt-get -y install linux-generic
@@ -880,9 +998,28 @@ sed -ie 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="quiet nopl
 # apply grub configuration changes
 update-grub
 
-# install required packages for next installation steps
+EOF
+
+  # execute script
+  chroot "$CHROOT" /bin/bash "$TEMPFILE"
+  rm "$TEMPFILE"
+}
+
+function install_container_requirements {
+
+  # temporary file for this installation step
+  local TEMPFILE="$(mktemp)"
+
+  # write installation script
+  echo '#!/bin/bash' > "$TEMPFILE"
+  cat >> "$TEMPFILE" << 'EOF'
+
+# install main packages
 apt-get -y install debootstrap
 apt-get -y install software-properties-common
+
+# install init scripts for cloud instances
+apt-get -y install cloud-init
 
 EOF
 
@@ -1019,6 +1156,7 @@ function show_help {
   echo "   * manage-package-sources: add package sources"
   echo "   * install-base: install bundles and tools for a general purpose system"
   echo "   * install-system: install Ubuntu to block device files"
+  echo "   * install-container-image: install a generated LXD/LXC image"
   echo ""
   echo "Software bundles:"
   echo "   * virt: QEMU/KVM with extended tooling"
