@@ -28,7 +28,7 @@ function main {
         shift 1
         ;;
       -u|--username)
-        USERNAME="$2"
+        USERNAME_NEW="$2"
         shift 2
         ;;
       -c|--codename)
@@ -97,6 +97,13 @@ function main {
 
     fi
 
+    # use name of current user by default
+    if [[ -z "$USERNAME_NEW" ]]; then
+
+      USERNAME_NEW="$USER"
+
+    fi
+
     # select task
     case "$TASK" in
       install-script)
@@ -144,7 +151,7 @@ function check_root_privileges {
 
 function check_username {
 
-  if [[ -z "$USERNAME" ]] || ! echo "$USERNAME" | grep -qE "$NAME_REGEX"; then
+  if [[ -z "$USERNAME_NEW" ]] || ! echo "$USERNAME_NEW" | grep -qE "$NAME_REGEX"; then
 
     echo "$SELF_NAME: require valid username" >&2
     exit 1
@@ -154,7 +161,7 @@ function check_username {
 
 function check_username_exists {
 
-  if getent passwd "$USERNAME" > /dev/null; then
+  if getent passwd "$USERNAME_NEW" > /dev/null; then
 
     if ! "$1"; then
 
@@ -292,7 +299,7 @@ function task_create_user {
   check_username_exists false
 
   # create user and home-directory if not exist
-  adduser --add_extra_groups "$USERNAME"
+  adduser --add_extra_groups "$USERNAME_NEW"
 }
 
 function task_modify_user {
@@ -303,14 +310,14 @@ function task_modify_user {
   check_username_exists true
 
   # create home-directory if not exist
-  mkhomedir_helper "$USERNAME"
+  mkhomedir_helper "$USERNAME_NEW"
 
   # add user to extra groups
   for i in $EXTRA_GROUPS; do
 
     if grep -qE "^$i:" /etc/group; then
 
-      usermod -aG "$i" "$USERNAME"
+      usermod -aG "$i" "$USERNAME_NEW"
 
     fi
 
@@ -647,7 +654,7 @@ function task_install_system {
   fi
 
   # create user
-  chroot "$CHROOT" "$SELF_NAME" create-user -u "$USERNAME"
+  chroot "$CHROOT" "$SELF_NAME" create-user -u "$USERNAME_NEW"
 
   # login to shell for diagnostic purposes
   echo "$SELF_NAME: You are now logged in to the chroot environment for diagnostic purposes. Press Ctrl-D to escape."
