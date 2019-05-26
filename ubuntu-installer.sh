@@ -11,8 +11,8 @@ function main {
 
   # parse arguments
   OPTIONS_PARSED=$(getopt \
-    --options 'hu:c:b:x:y:' \
-    --longoptions 'help,username:,codename:,bundles:,dev-root:,dev-home:' \
+    --options 'hu:n:c:b:x:y:' \
+    --longoptions 'help,username:,hostname:,codename:,bundles:,dev-root:,dev-home:' \
     --name "$SELF_NAME" \
     -- "$@"
   )
@@ -29,6 +29,10 @@ function main {
         ;;
       -u|--username)
         USERNAME_NEW="$2"
+        shift 2
+        ;;
+      -n|--hostname)
+        HOSTNAME_NEW="$2"
         shift 2
         ;;
       -c|--codename)
@@ -101,6 +105,13 @@ function main {
     if [[ -z "$USERNAME_NEW" ]]; then
 
       USERNAME_NEW="$USER"
+
+    fi
+
+    # use current hostname by default
+    if [[ -z "$HOSTNAME_NEW" ]]; then
+
+      HOSTNAME_NEW="$HOSTNAME"
 
     fi
 
@@ -612,7 +623,10 @@ function task_install_system {
   chmod a+x "$CHROOT/usr/local/sbin/$SELF_NAME"
 
   # configuration before starting chroot
-  configure_system
+  configure_hosts
+  configure_fstab
+  configure_vim
+  configure_users
   configure_network
 
   # mount OS resources into chroot environment
@@ -668,38 +682,67 @@ function task_install_system {
   echo "$SELF_NAME: done."
 }
 
-function configure_system {
+function configure_hosts {
+
+  # edit /etc/hostname
+  echo "$HOSTNAME_NEW" > "$CHROOT/etc/hostname"
+
+  # edit /etc/hosts
+  echo "127.0.0.1   localhost" > "$CHROOT/etc/hosts"
+  echo "127.0.1.1   $HOSTNAME_NEW" >> "$CHROOT/etc/hosts"
+  echo "" >> "$CHROOT/etc/hosts"
+  echo "# The following lines are desirable for IPv6 capable hosts" >> "$CHROOT/etc/hosts"
+  echo "::1         ip6-localhost ip6-loopback" >> "$CHROOT/etc/hosts"
+  echo "fe00::0     ip6-localnet" >> "$CHROOT/etc/hosts"
+  echo "ff00::0     ip6-mcastprefix" >> "$CHROOT/etc/hosts"
+  echo "ff02::1     ip6-allnodes" >> "$CHROOT/etc/hosts"
+  echo "ff02::2     ip6-allrouters" >> "$CHROOT/etc/hosts"
+  echo "ff02::3     ip6-allhosts" >> "$CHROOT/etc/hosts"
+}
+
+function configure_fstab {
+
+  # set path /etc/fstab
+  local FILE="$CHROOT/etc/fstab"
 
   # get UUID of each partition
   local UUID_ROOT="$(blkid "$DEV_ROOT" | grep -oE 'UUID="[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}' | cut -c 7-)"
   local UUID_HOME="$(blkid "$DEV_HOME" | grep -oE 'UUID="[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}' | cut -c 7-)"
 
-  # set hostname
-  echo 'ubuntu' > "$CHROOT/etc/hostname"
-  echo "127.0.1.1   ubuntu" >> "$CHROOT/etc/hosts"
+  # edit /etc/fstab
+  echo '# /etc/fstab' > "$FILE"
+  echo '# <file system>     <mount point>     <type>     <options>                        <dump> <pass>' >> "$FILE"
+  echo "UUID=$UUID_ROOT     /                 ext4       defaults,errors=remount-ro       0      1" >> "$FILE"
+  echo "UUID=$UUID_HOME     /home             ext4       defaults                         0      2" >> "$FILE"
+  echo "proc                /proc             proc       defaults                         0      0" >> "$FILE"
+  echo "sys                 /sys              sysfs      defaults                         0      0" >> "$FILE"
+  echo "tmpfs               /tmp              tmpfs      defaults,size=40%                0      0" >> "$FILE"
+}
 
-  # create fstab file
-  echo '# /etc/fstab' > "$CHROOT/etc/fstab"
-  echo '# <file system>   <mount point>   <type>   <options>                      <dump> <pass>' >> "$CHROOT/etc/fstab"
-  echo "UUID=$UUID_ROOT   /               ext4     defaults,errors=remount-ro     0      1" >> "$CHROOT/etc/fstab"
-  echo "UUID=$UUID_HOME   /home           ext4     defaults                       0      2" >> "$CHROOT/etc/fstab"
-  echo "proc              /proc           proc     defaults                       0      0" >> "$CHROOT/etc/fstab"
-  echo "sys               /sys            sysfs    defaults                       0      0" >> "$CHROOT/etc/fstab"
-  echo "tmpfs             /tmp            tmpfs    defaults,size=40%              0      0" >> "$CHROOT/etc/fstab"
+function configure_vim {
 
-  # modify vimrc file
-  echo '' >> "$CHROOT/etc/vim/vimrc"
-  echo 'filetype plugin indent on' >> "$CHROOT/etc/vim/vimrc"
-  echo 'syntax on' >> "$CHROOT/etc/vim/vimrc"
-  echo 'set nocp' >> "$CHROOT/etc/vim/vimrc"
-  echo 'set background=light' >> "$CHROOT/etc/vim/vimrc"
-  echo 'set tabstop=4' >> "$CHROOT/etc/vim/vimrc"
-  echo 'set shiftwidth=4' >> "$CHROOT/etc/vim/vimrc"
-  echo 'set expandtab' >> "$CHROOT/etc/vim/vimrc"
+  # set path /etc/vim/vimrc
+  local FILE="$CHROOT/etc/vim/vimrc"
 
-  # set defaults for new users
-  sed -ie 's/^#EXTRA_GROUPS=.*/EXTRA_GROUPS="'"$EXTRA_GROUPS"'"/' "$CHROOT/etc/adduser.conf"
-  sed -ie 's/^#NAME_REGEX=.*/NAME_REGEX="'"$NAME_REGEX"'"/' "$CHROOT/etc/adduser.conf"
+  # edit /etc/vim/vimrc
+  echo '' >> "$FILE"
+  echo 'filetype plugin indent on' >> "$FILE"
+  echo 'syntax on' >> "$FILE"
+  echo 'set nocp' >> "$FILE"
+  echo 'set background=light' >> "$FILE"
+  echo 'set tabstop=4' >> "$FILE"
+  echo 'set shiftwidth=4' >> "$FILE"
+  echo 'set expandtab' >> "$FILE"
+}
+
+function configure_users {
+
+  # set path /etc/adduser.conf
+  local FILE="$CHROOT/etc/adduser.conf"
+
+  # edit /etc/adduser.conf
+  sed -ie 's/^#EXTRA_GROUPS=.*/EXTRA_GROUPS="'"$EXTRA_GROUPS"'"/' "$FILE"
+  sed -ie 's/^#NAME_REGEX=.*/NAME_REGEX="'"$NAME_REGEX"'"/' "$FILE"
 }
 
 function configure_network {
@@ -958,6 +1001,7 @@ function show_help {
 
   echo "Usage: $SELF_NAME <task>"
   echo "   ( -u | --username ) <your username>"
+  echo "   ( -n | --hostname ) <hostname>"
   echo "   ( -c | --codename ) <Ubuntu codename: bionic|cosmic|...>"
   echo "   ( -b | --bundles  ) <desktop,dev,...>"
   echo "   ( -x | --dev-root ) <block device file for system partition '/'>"
