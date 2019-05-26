@@ -74,7 +74,7 @@ function main {
     fi
 
     # assign the task
-    TASK="$1"
+    local TASK="$1"
     shift 1
 
     # check if there is no unassigned argument left
@@ -232,8 +232,8 @@ function task_install_script {
   # check arguments
   check_root_privileges
 
-  TEMPDIR="$(mktemp -d)"
-  BINDIR='/usr/local/sbin'
+  local TEMPDIR="$(mktemp -d)"
+  local BINDIR='/usr/local/sbin'
 
   git clone 'https://github.com/brettaufheber/ubuntu-installer.git' "$TEMPDIR"
 
@@ -248,8 +248,8 @@ function task_install_desktop_helpers {
   # check arguments
   check_root_privileges
 
-  TEMPDIR="$(mktemp -d)"
-  BINDIR='/usr/local/sbin'
+  local TEMPDIR="$(mktemp -d)"
+  local BINDIR='/usr/local/sbin'
 
   git clone 'https://github.com/brettaufheber/ubuntu-installer.git' "$TEMPDIR"
 
@@ -330,9 +330,9 @@ function task_manage_package_sources {
   check_root_privileges
 
   # set variables
-  SRCLIST='/etc/apt/sources.list.d'
-  MIRROR='mirror://mirrors.ubuntu.com/mirrors.txt'
-  COMPONENTS='main universe multiverse restricted'
+  local SRCLIST='/etc/apt/sources.list.d'
+  local MIRROR='mirror://mirrors.ubuntu.com/mirrors.txt'
+  local COMPONENTS='main universe multiverse restricted'
 
   # set OS variables
   . /etc/os-release
@@ -671,8 +671,8 @@ function task_install_system {
 function configure_system {
 
   # get UUID of each partition
-  UUID_ROOT="$(blkid "$DEV_ROOT" | grep -oE 'UUID="[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}' | cut -c 7-)"
-  UUID_HOME="$(blkid "$DEV_HOME" | grep -oE 'UUID="[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}' | cut -c 7-)"
+  local UUID_ROOT="$(blkid "$DEV_ROOT" | grep -oE 'UUID="[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}' | cut -c 7-)"
+  local UUID_HOME="$(blkid "$DEV_HOME" | grep -oE 'UUID="[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}' | cut -c 7-)"
 
   # set hostname
   echo 'ubuntu' > "$CHROOT/etc/hostname"
@@ -782,7 +782,7 @@ function configure_network {
 function configure_packages {
 
   # temporary file for this installation step
-  TEMPFILE="$(mktemp)"
+  local TEMPFILE="$(mktemp)"
 
   # write installation script
   echo '#!/bin/bash' > "$TEMPFILE"
@@ -807,7 +807,7 @@ EOF
 function install_core_system {
 
   # temporary file for this installation step
-  TEMPFILE="$(mktemp)"
+  local TEMPFILE="$(mktemp)"
 
   # write installation script
   echo '#!/bin/bash' > "$TEMPFILE"
@@ -1000,7 +1000,7 @@ function mounting_step_1 {
   # mount $DEV_HOME
   if mount | grep -q "$DEV_HOME"; then
 
-    HOME_PATH="$(df "$DEV_HOME" | grep -oE '(/[[:alnum:]]+)+$' | head -1)"
+    local HOME_PATH="$(df "$DEV_HOME" | grep -oE '(/[[:alnum:]]+)+$' | head -1)"
 
     mkdir -p "$CHHOME"
     mount -o bind "$HOME_PATH" "$CHHOME"
