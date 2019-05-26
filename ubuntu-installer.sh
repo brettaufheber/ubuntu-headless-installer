@@ -665,6 +665,9 @@ function task_install_system {
 
   fi
 
+  # remove retrieved package files
+  chroot "$CHROOT" apt-get clean
+
   # create user
   chroot "$CHROOT" "$SELF_NAME" create-user -u "$USERNAME_NEW"
 
