@@ -533,6 +533,14 @@ function task_install_base {
     apt-get -y install slick-greeter
     apt-get -y install gnome-screensaver
 
+    # install some plugins for VPN support
+    apt-get -y install network-manager-pptp network-manager-pptp-gnome
+    apt-get -y install network-manager-l2tp network-manager-l2tp-gnome
+    apt-get -y install network-manager-openvpn network-manager-openvpn-gnome
+    apt-get -y install network-manager-openconnect network-manager-openconnect-gnome
+    apt-get -y install network-manager-vpnc network-manager-vpnc-gnome
+    apt-get -y install network-manager-strongswan
+
     # install scanner and printer support
     apt-get -y install simple-scan
     apt-get -y install cups cups-client cups-bsd
