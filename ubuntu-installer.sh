@@ -12,8 +12,8 @@ function main {
 
   # parse arguments
   OPTIONS_PARSED=$(getopt \
-    --options 'hu:n:c:b:x:y:' \
-    --longoptions 'help,username:,hostname:,codename:,bundles:,dev-root:,dev-home:' \
+    --options 'hu:n:c:m:b:x:y:' \
+    --longoptions 'help,username:,hostname:,codename:,mirror:,bundles:,dev-root:,dev-home:' \
     --name "$SELF_NAME" \
     -- "$@"
   )
@@ -38,6 +38,10 @@ function main {
         ;;
       -c|--codename)
         CODENAME="$2"
+        shift 2
+        ;;
+      -m|--mirror)
+        MIRROR="$2"
         shift 2
         ;;
       -b|--bundles)
@@ -113,6 +117,13 @@ function main {
     if [[ -z "$HOSTNAME_NEW" ]]; then
 
       HOSTNAME_NEW="$HOSTNAME"
+
+    fi
+
+    # use mirror list by default
+    if [[ -z "$MIRROR" ]]; then
+
+      MIRROR='mirror://mirrors.ubuntu.com/mirrors.txt'
 
     fi
 
@@ -346,7 +357,6 @@ function task_manage_package_sources {
 
   # set variables
   local SRCLIST='/etc/apt/sources.list.d'
-  local MIRROR='mirror://mirrors.ubuntu.com/mirrors.txt'
   local COMPONENTS='main universe multiverse restricted'
 
   # set OS variables
@@ -636,7 +646,7 @@ function task_install_system {
   install_host_requirements
 
   # manage package sources
-  chroot "$CHROOT" "$SELF_NAME" manage-package-sources
+  chroot "$CHROOT" "$SELF_NAME" manage-package-sources -m "$MIRROR"
 
   # install software
   chroot "$CHROOT" "$SELF_NAME" install-base -b "$BUNDLES"
@@ -695,7 +705,7 @@ function task_install_container_image {
   install_container_requirements
 
   # manage package sources
-  chroot "$CHROOT" "$SELF_NAME" manage-package-sources
+  chroot "$CHROOT" "$SELF_NAME" manage-package-sources -m "$MIRROR"
 
   # install software
   chroot "$CHROOT" "$SELF_NAME" install-base -b "$BUNDLES"
@@ -1132,6 +1142,7 @@ function show_help {
   echo "   ( -u | --username ) <your username>"
   echo "   ( -n | --hostname ) <hostname>"
   echo "   ( -c | --codename ) <Ubuntu codename: bionic|cosmic|...>"
+  echo "   ( -m | --mirror   ) <mirror for APT package manager>"
   echo "   ( -b | --bundles  ) <desktop,dev,...>"
   echo "   ( -x | --dev-root ) <block device file for system partition '/'>"
   echo "   ( -y | --dev-home ) <block device file for home partition '/home'>"
