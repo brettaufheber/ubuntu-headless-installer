@@ -398,8 +398,6 @@ function task_install_base {
   # set default values for packages
   echo wireshark-common wireshark-common/install-setuid select true | debconf-set-selections
   echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
-  echo gdm3 shared/default-x-display-manager select lightdm | debconf-set-selections
-  echo lightdm shared/default-x-display-manager select lightdm | debconf-set-selections
 
   # install version control system
   apt-get -y install git
@@ -526,12 +524,6 @@ function task_install_base {
     apt-get -y install materia-gtk-theme
     apt-get -y install dconf-cli dconf-editor
     apt-get -y install gedit ghex
-
-    # install display manager
-    apt-get -y install lightdm
-    apt-get -y install lightdm-settings
-    apt-get -y install slick-greeter
-    apt-get -y install gnome-screensaver
 
     # install some plugins for VPN support
     apt-get -y install network-manager-pptp network-manager-pptp-gnome
@@ -947,15 +939,6 @@ function configure_desktop {
 
     # modify default GNOME settings
     install_default_gnome_settings
-
-    # set default theme for slick greeter
-    local BGIMAGE="$(chroot "$CHROOT" ls -1 /usr/share/backgrounds/*ubuntu.png | head -1)"
-    echo '[Greeter]' > "$CHROOT/etc/lightdm/slick-greeter.conf"
-    echo "background=$BGIMAGE"  >> "$CHROOT/etc/lightdm/slick-greeter.conf"
-    echo 'theme-name=Materia-dark' >> "$CHROOT/etc/lightdm/slick-greeter.conf"
-    echo 'icon-theme-name=Adwaita' >> "$CHROOT/etc/lightdm/slick-greeter.conf"
-    echo 'background-color=#000000' >> "$CHROOT/etc/lightdm/slick-greeter.conf"
-    echo 'draw-grid=true' >> "$CHROOT/etc/lightdm/slick-greeter.conf"
 
   fi
 }
