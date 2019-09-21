@@ -9,11 +9,12 @@ function main {
   NAME_REGEX='^[a-z][-a-z0-9]*$'
   EXTRA_GROUPS='adm audio cdrom dialout dip floppy libvirt lpadmin plugdev sudo users video wireshark'
   SHOW_HELP=false
+  SHELL_LOGIN=false
 
   # parse arguments
   OPTIONS_PARSED=$(getopt \
-    --options 'hu:n:c:m:b:x:y:' \
-    --longoptions 'help,username:,hostname:,codename:,mirror:,bundles:,dev-root:,dev-home:' \
+    --options 'hlu:n:c:m:b:x:y:' \
+    --longoptions 'help,login,username:,hostname:,codename:,mirror:,bundles:,dev-root:,dev-home:' \
     --name "$SELF_NAME" \
     -- "$@"
   )
@@ -26,6 +27,10 @@ function main {
     case "$1" in
       -h|--help)
         SHOW_HELP=true
+        shift 1
+        ;;
+      -l|--login)
+        SHELL_LOGIN=true
         shift 1
         ;;
       -u|--username)
@@ -661,8 +666,12 @@ function task_install_system {
   chroot "$CHROOT" "$SELF_NAME" create-user -u "$USERNAME_NEW"
 
   # login to shell for diagnostic purposes
-  echo "$SELF_NAME: You are now logged in to the chroot environment for diagnostic purposes. Press Ctrl-D to escape."
-  chroot "$CHROOT" /bin/bash
+  if "$SHELL_LOGIN"; then
+
+    echo "$SELF_NAME: You are now logged in to the chroot environment for diagnostic purposes. Press Ctrl-D to escape."
+    chroot "$CHROOT" /bin/bash
+
+  fi
 
   # unmount everything
   unmounting_step_2
@@ -1148,6 +1157,8 @@ function show_help {
   echo "   ( -y | --dev-home ) <block device file for home partition '/home'>"
   echo ""
   echo "Show this text: $SELF_NAME ( -h | --help )"
+  echo ""
+  echo "Enter shell after installation: $SELF_NAME ( -l | --login )"
   echo ""
   echo "Tasks:"
   echo "   * install-script: install the newest version of this script"
