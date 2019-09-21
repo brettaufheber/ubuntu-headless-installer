@@ -114,7 +114,15 @@ function main {
     # use name of current user by default
     if [[ -z "$USERNAME_NEW" ]]; then
 
-      USERNAME_NEW="$USER"
+      USERNAME_NEW="$(get_username)"
+
+    fi
+
+    # make sure the username is different to root
+    if [[ $USERNAME_NEW == "root" ]]; then
+
+      echo "$SELF_NAME: require username different to root" >&2
+      exit 1
 
     fi
 
@@ -1178,6 +1186,24 @@ function show_help {
   echo "   * laptop: power saving tools for mobile devices"
   echo "   * web: server and proxy for web"
   echo ""
+}
+
+function get_username {
+
+  local ORIGIN_USER="$USER"
+  local CURRENT_PID=$$
+  local CURRENT_USER=$ORIGIN_USER
+  local RESULT
+
+  while [[ "$CURRENT_USER" == "root" && $CURRENT_PID > 0 ]]; do
+
+    RESULT=($(ps h -p $CURRENT_PID -o user,ppid))
+    CURRENT_USER="${RESULT[0]}"
+    CURRENT_PID="${RESULT[1]}"
+
+  done
+
+  getent passwd "$CURRENT_USER" | cut -d : -f 1
 }
 
 function mounting_step_1 {
