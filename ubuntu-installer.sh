@@ -537,6 +537,7 @@ function task_install_base {
     apt-get -y install libgtk-3-dev libgtk2.0-dev
 
     # install GNOME desktop
+    apt-get -y install gnome-session
     apt-get -y install gnome-core
     apt-get -y install gnome-contacts
     apt-get -y install gnome-calendar
@@ -582,6 +583,12 @@ function task_install_base {
 
     # install language pack
     apt-get -y install "language-pack-gnome-$SYSLANG"
+
+    # set GDM theme
+    update-alternatives --install \
+      /usr/share/gnome-shell/theme/gdm3.css gdm3.css /usr/share/themes/Materia-dark/gnome-shell/gnome-shell.css 42
+    update-alternatives --set \
+      gdm3.css /usr/share/themes/Materia-dark/gnome-shell/gnome-shell.css
 
   fi
 
