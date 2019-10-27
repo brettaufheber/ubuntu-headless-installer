@@ -99,47 +99,6 @@ function main {
 
     fi
 
-    # create bundle array
-    if [[ -z "$BUNDLES" ]]; then
-
-      declare -a BARRAY
-
-    else
-
-      readarray -td ',' BARRAY <<< "$BUNDLES"
-      for i in "${!BARRAY[@]}"; do BARRAY[$i]="$(echo "${BARRAY[$i]}" | tr -d '[:space:]')"; done
-
-    fi
-
-    # use name of current user by default
-    if [[ -z "$USERNAME_NEW" ]]; then
-
-      USERNAME_NEW="$(get_username)"
-
-    fi
-
-    # make sure the username is different to root
-    if [[ $USERNAME_NEW == "root" ]]; then
-
-      echo "$SELF_NAME: require username different to root" >&2
-      exit 1
-
-    fi
-
-    # use current hostname by default
-    if [[ -z "$HOSTNAME_NEW" ]]; then
-
-      HOSTNAME_NEW="$HOSTNAME"
-
-    fi
-
-    # use mirror list by default
-    if [[ -z "$MIRROR" ]]; then
-
-      MIRROR='mirror://mirrors.ubuntu.com/mirrors.txt'
-
-    fi
-
     # select task
     case "$TASK" in
       install-script)
@@ -266,9 +225,62 @@ function check_mounting {
   fi
 }
 
+function set_bundle_array {
+
+  # create bundle array
+  if [[ -z "$BUNDLES" ]]; then
+
+    declare -a BARRAY
+
+  else
+
+    readarray -td ',' BARRAY <<< "$BUNDLES"
+    for i in "${!BARRAY[@]}"; do BARRAY[$i]="$(echo "${BARRAY[$i]}" | tr -d '[:space:]')"; done
+
+  fi
+}
+
+function set_username_default {
+
+  # use name of current user by default
+  if [[ -z "$USERNAME_NEW" ]]; then
+
+    USERNAME_NEW="$(get_username)"
+
+  fi
+
+  # make sure the username is different to root
+  if [[ $USERNAME_NEW == "root" ]]; then
+
+    echo "$SELF_NAME: require username different to root" >&2
+    exit 1
+
+  fi
+}
+
+function set_hostname_default {
+
+  # use current hostname by default
+  if [[ -z "$HOSTNAME_NEW" ]]; then
+
+    HOSTNAME_NEW="$HOSTNAME"
+
+  fi
+}
+
+function set_mirror_default {
+
+  # use mirror list by default
+  if [[ -z "$MIRROR" ]]; then
+
+    MIRROR='mirror://mirrors.ubuntu.com/mirrors.txt'
+
+  fi
+}
+
 function task_install_script {
 
-  # check arguments
+  # verify arguments
   check_root_privileges
 
   local TEMPDIR="$(mktemp -d)"
@@ -284,7 +296,7 @@ function task_install_script {
 
 function task_install_desktop_helpers {
 
-  # check arguments
+  # verify arguments
   check_root_privileges
 
   local TEMPDIR="$(mktemp -d)"
@@ -306,7 +318,8 @@ function task_install_desktop_helpers {
 
 function task_update {
 
-  # check arguments
+  # verify arguments
+  set_bundle_array
   check_root_privileges
   check_software_bundle_names
 
@@ -332,7 +345,8 @@ function task_update {
 
 function task_create_user {
 
-  # check arguments
+  # verify arguments
+  set_username_default
   check_root_privileges
   check_username
   check_username_exists false
@@ -343,7 +357,8 @@ function task_create_user {
 
 function task_modify_user {
 
-  # check arguments
+  # verify arguments
+  set_username_default
   check_root_privileges
   check_username
   check_username_exists true
@@ -365,7 +380,8 @@ function task_modify_user {
 
 function task_manage_package_sources {
 
-  # check arguments
+  # verify arguments
+  set_mirror_default
   check_root_privileges
 
   # set variables
@@ -400,7 +416,8 @@ function task_manage_package_sources {
 
 function task_install_base {
 
-  # check arguments
+  # verify arguments
+  set_bundle_array
   check_root_privileges
   check_software_bundle_names
 
@@ -633,7 +650,11 @@ function task_install_base {
 
 function task_install_system {
 
-  # check arguments
+  # verify arguments
+  set_bundle_array
+  set_username_default
+  set_hostname_default
+  set_mirror_default
   check_root_privileges
   check_username
   check_codename
@@ -698,7 +719,10 @@ function task_install_system {
 
 function task_install_container_image {
 
-  # check arguments
+  # verify arguments
+  set_bundle_array
+  set_username_default
+  set_mirror_default
   check_root_privileges
   check_codename
   check_software_bundle_names
