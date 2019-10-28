@@ -555,6 +555,7 @@ function task_install_base {
 
     # install GNOME desktop
     apt-get -y install gnome-session
+    apt-get -y install gucharmap
     apt-get -y install gnome-core
     apt-get -y install gnome-contacts
     apt-get -y install gnome-calendar
