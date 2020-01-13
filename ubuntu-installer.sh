@@ -442,10 +442,11 @@ function task_install_base {
   # install version control system
   apt-get -y install git
 
-  # install text editors
+  # install text editors and query tools
   apt-get -y install vim
   apt-get -y install emacs-nox
   apt-get -y install nano
+  apt-get -y install jq
 
   # install archiving and compression tools
   apt-get -y install tar gzip bzip2 zip unzip p7zip rar unrar
