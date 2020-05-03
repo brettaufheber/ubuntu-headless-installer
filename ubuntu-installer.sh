@@ -10,11 +10,12 @@ function main {
   EXTRA_GROUPS='adm audio cdrom dialout dip floppy libvirt lpadmin plugdev sudo users video wireshark'
   SHOW_HELP=false
   SHELL_LOGIN=false
+  USE_EFI=false
 
   # parse arguments
   OPTIONS_PARSED=$(getopt \
-    --options 'hlu:n:c:m:b:x:y:' \
-    --longoptions 'help,login,username:,hostname:,codename:,mirror:,bundles:,dev-root:,dev-home:' \
+    --options 'hleu:n:c:m:b:x:y:' \
+    --longoptions 'help,login,efi,username:,hostname:,codename:,mirror:,bundles:,dev-root:,dev-home:' \
     --name "$SELF_NAME" \
     -- "$@"
   )
@@ -31,6 +32,10 @@ function main {
         ;;
       -l|--login)
         SHELL_LOGIN=true
+        shift 1
+        ;;
+      -e|--efi)
+        USE_EFI=true
         shift 1
         ;;
       -u|--username)
@@ -845,13 +850,26 @@ function configure_fstab {
   local FILE="$CHROOT/etc/fstab"
 
   # get UUID of each partition
-  local UUID_ROOT="$(blkid "$DEV_ROOT" | grep -oE 'UUID="[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}' | cut -c 7-)"
-  local UUID_HOME="$(blkid "$DEV_HOME" | grep -oE 'UUID="[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}' | cut -c 7-)"
+  local UUID_ROOT="$(blkid -s UUID -o value "$DEV_ROOT")"
+  local UUID_HOME="$(blkid -s UUID -o value "$DEV_HOME")"
+
+  if "$USE_EFI"; then
+
+    local DEV_UEFI="$(cat /proc/mounts | grep -E /boot/efi | cut -d ' ' -f 1)"
+    local UUID_UEFI="$(blkid -s UUID -o value "$DEV_UEFI")"
+    local FILE_UEFI="$FILE"
+
+  else
+
+    local FILE_UEFI="/dev/null"
+
+  fi
 
   # edit /etc/fstab
   echo '# /etc/fstab' > "$FILE"
   echo '# <file system>     <mount point>     <type>     <options>                        <dump> <pass>' >> "$FILE"
   echo "UUID=$UUID_ROOT     /                 ext4       defaults,errors=remount-ro       0      1" >> "$FILE"
+  echo "UUID=$UUID_UEFI     /boot/efi         vfat       defaults                         0      2" >> "$FILE_UEFI"
   echo "UUID=$UUID_HOME     /home             ext4       defaults                         0      2" >> "$FILE"
   echo "proc                /proc             proc       defaults                         0      0" >> "$FILE"
   echo "sys                 /sys              sysfs      defaults                         0      0" >> "$FILE"
@@ -1020,6 +1038,8 @@ function install_host_requirements {
 
   # write installation script
   echo '#!/bin/bash' > "$TEMPFILE"
+  echo '' > "$TEMPFILE"
+  echo "USE_EFI=$USE_EFI" > "$TEMPFILE"
   cat >> "$TEMPFILE" << 'EOF'
 
 # install main packages
@@ -1040,6 +1060,14 @@ fi
 if cat /proc/cpuinfo | grep -qE '^model name\s+:\s+AMD'; then
 
   apt-get -y install amd64-microcode
+
+fi
+
+if "$USE_EFI"; then
+
+  apt-get -y install grub-efi
+  grub-install --target=x86_64-efi
+  echo 'The boot order must be adjusted manually using the efibootmgr tool.'
 
 fi
 
@@ -1296,6 +1324,13 @@ function mounting_step_2 {
   mount -o bind /dev/pts "$CHROOT/dev/pts"
   mount -o bind /run "$CHROOT/run"
   mount -o bind /tmp "$CHROOT/tmp"
+
+  if "$USE_EFI"; then
+
+    mkdir -p "$CHROOT/boot/efi"
+    mount -o bind /boot/efi "$CHROOT/boot/efi"
+
+  fi
 }
 
 function unmounting_step_2 {
@@ -1313,6 +1348,12 @@ function unmounting_step_2 {
     umount -l "$CHROOT/dev"
     umount -l "$CHROOT/sys"
     umount -l "$CHROOT/proc"
+
+    if "$USE_EFI"; then
+
+      umount -l "$CHROOT/boot/efi"
+
+    fi
 
   fi
 }
