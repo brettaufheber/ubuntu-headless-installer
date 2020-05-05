@@ -1181,6 +1181,14 @@ power-button-action='suspend'
 [org/gnome/desktop/sound]
 event-sounds=false
 
+# disable auto mount
+
+[org/gnome/desktop/media-handling]
+automount=false
+
+[org/gnome/desktop/media-handling]
+automount-open=false
+
 # modify user interface ("dconf watch /" helps to find the keys and values)
 
 [org/gnome/shell]
@@ -1189,14 +1197,17 @@ disable-user-extensions=false
 [org/gnome/desktop/wm/preferences]
 button-layout='appmenu:minimize,maximize,close'
 
-[org/gnome/settings-daemon/plugins/xsettings]
-overrides={'Gtk/ShellShowsAppMenu': <0>}
-
 [org/gnome/desktop/interface]
 show-battery-percentage=true
 
 [org/gnome/desktop/interface]
+clock-show-weekday=true
+
+[org/gnome/desktop/interface]
 clock-show-date=true
+
+[org/gnome/desktop/interface]
+clock-show-seconds=false
 
 [org/gnome/desktop/calendar]
 show-weekdate=true
