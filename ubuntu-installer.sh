@@ -454,7 +454,7 @@ function task_install_base {
   apt-get -y install jq
 
   # install archiving and compression tools
-  apt-get -y install tar gzip bzip2 zip unzip p7zip rar unrar
+  apt-get -y install tar gzip bzip2 zip unzip p7zip
 
   # install SSH support
   apt-get -y install openssh-server openssh-client
