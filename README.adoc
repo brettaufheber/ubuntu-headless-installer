@@ -44,6 +44,7 @@ installation.
 * desktop: minimal GNOME desktop
 * laptop: power saving tools for mobile devices
 * web: server and proxy for web
+* x86: architecture specific tools and libraries (requires dev)
 
 === License
 
