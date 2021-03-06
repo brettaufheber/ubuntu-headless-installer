@@ -453,6 +453,9 @@ function task_install_base {
   apt-get -y install nano
   apt-get -y install jq
 
+  # install network tooling
+  apt-get -y install net-tools
+
   # install archiving and compression tools
   apt-get -y install tar gzip bzip2 zip unzip p7zip
 
