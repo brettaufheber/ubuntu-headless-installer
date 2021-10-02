@@ -203,14 +203,15 @@ function check_software_bundle_names {
 
   for i in "${!BARRAY[@]}"; do
 
-    if [[ ${BARRAY[$i]} != 'virt' ]] && \
+    if [[ ${BARRAY[$i]} != 'net' ]] && \
+        [[ ${BARRAY[$i]} != 'virt' ]] && \
         [[ ${BARRAY[$i]} != 'dev' ]] && \
         [[ ${BARRAY[$i]} != 'desktop' ]] && \
         [[ ${BARRAY[$i]} != 'laptop' ]] && \
         [[ ${BARRAY[$i]} != 'web' ]] && \
         [[ ${BARRAY[$i]} != 'x86' ]]; then
 
-      echo "$SELF_NAME: require valid bundle names [virt, dev, desktop, laptop, web, x86]" >&2
+      echo "$SELF_NAME: require valid bundle names [net, virt, dev, desktop, laptop, web, x86]" >&2
       exit 1
 
     fi
@@ -472,9 +473,6 @@ function task_install_base {
   apt-get -y install nano
   apt-get -y install jq
 
-  # install network tooling
-  apt-get -y install net-tools
-
   # install archiving and compression tools
   apt-get -y install tar gzip bzip2 zip unzip p7zip
 
@@ -492,6 +490,28 @@ function task_install_base {
 
   # install everything else needed by a simple general purpose system
   aptitude -y install ~pstandard ~pimportant ~prequired
+
+  # network tools
+  if [[ ${BARRAY[*]} =~ 'net' ]]; then
+
+    # install network tooling
+    apt-get -y install curl
+    apt-get -y install wget
+    apt-get -y install iputils-*
+    apt-get -y install iproute2
+    apt-get -y install net-tools
+    apt-get -y install dnsutils
+    apt-get -y install tcpdump
+    apt-get -y install telnet
+    apt-get -y install nmap
+    apt-get -y install ncat
+    apt-get -y install socat
+    apt-get -y install tshark
+    apt-get -y install traceroute
+    apt-get -y install tcptraceroute
+    apt-get -y install whois
+
+  fi
 
   # virtualization software
   if [[ ${BARRAY[*]} =~ 'virt' ]]; then
@@ -561,10 +581,6 @@ function task_install_base {
     apt-get -y install maven
     apt-get -y install gradle
     apt-get -y install sbt
-
-    # install network diagnostic tools
-    apt-get -y install nmap
-    apt-get -y install tshark
 
   fi
 
@@ -653,8 +669,8 @@ function task_install_base {
 
   fi
 
-  # minimal desktop with development software
-  if [[ ${BARRAY[*]} =~ 'desktop' ]] && [[ ${BARRAY[*]} =~ 'dev' ]]; then
+  # minimal desktop with network tooling
+  if [[ ${BARRAY[*]} =~ 'desktop' ]] && [[ ${BARRAY[*]} =~ 'net' ]]; then
 
     # install network packet analyzer
     apt-get -y install wireshark
@@ -1278,6 +1294,7 @@ function show_help {
   echo "   * install-container-image: install a generated LXD/LXC image"
   echo ""
   echo "Software bundles:"
+  echo "   * net: network tooling"
   echo "   * virt: QEMU/KVM with extended tooling"
   echo "   * dev: basic equipment for software developers"
   echo "   * desktop: minimal GNOME desktop"

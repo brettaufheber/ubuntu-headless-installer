@@ -39,6 +39,7 @@ installation.
 
 ==== Software bundles
 
+* net: network tooling
 * virt: QEMU/KVM with extended tooling
 * dev: basic equipment for software developers
 * desktop: minimal GNOME desktop
