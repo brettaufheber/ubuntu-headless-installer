@@ -938,7 +938,6 @@ function configure_network {
 
     echo "http_proxy=$http_proxy" >> "$CHROOT/etc/environment"
     echo "HTTP_PROXY=$http_proxy" >> "$CHROOT/etc/environment"
-    echo "Acquire::http::proxy \"$http_proxy\";" >> "$CHROOT/etc/apt/apt.conf"
 
   fi
 
@@ -947,7 +946,6 @@ function configure_network {
 
     echo "https_proxy=$https_proxy" >> "$CHROOT/etc/environment"
     echo "HTTPS_PROXY=$https_proxy" >> "$CHROOT/etc/environment"
-    echo "Acquire::https::proxy \"$https_proxy\";" >> "$CHROOT/etc/apt/apt.conf"
 
   fi
 
@@ -956,7 +954,6 @@ function configure_network {
 
     echo "ftp_proxy=$ftp_proxy" >> "$CHROOT/etc/environment"
     echo "FTP_PROXY=$ftp_proxy" >> "$CHROOT/etc/environment"
-    echo "Acquire::ftp::proxy \"$ftp_proxy\";" >> "$CHROOT/etc/apt/apt.conf"
 
   fi
 
