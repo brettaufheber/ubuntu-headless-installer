@@ -1,8 +1,20 @@
+*.class
+*.bin
 *.log
 *.pid
+*.lock
 *.swp
 *~
 .DS_Store
 Thumbs.db
+.cache
 
-/.idea/
+/logs/
+/log/
+/temp/
+/tmp/
+
+*.iws
+.idea/
+.idea_modules/
+.vscode/
