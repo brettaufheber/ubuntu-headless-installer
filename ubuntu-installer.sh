@@ -482,6 +482,9 @@ function task_install_base {
   # install SSL support
   apt-get -y install openssl
 
+  # install GnuPG
+  apt-get -y install gnupg
+
   # install support of snap packages
   apt-get -y install snapd
 
