@@ -729,7 +729,7 @@ function task_install_system {
   # configuration before starting chroot
   configure_hosts
   configure_fstab
-  configure_vim
+  configure_tools
   configure_users
   configure_network
 
@@ -796,7 +796,7 @@ function task_install_container_image {
   install_minimal_system
 
   # configuration before starting chroot
-  configure_vim
+  configure_tools
   configure_users
 
   # mount OS resources into chroot environment
@@ -924,20 +924,33 @@ function configure_fstab {
   echo "tmpfs               /tmp              tmpfs      defaults,size=40%                0      0" >> "$FILE"
 }
 
-function configure_vim {
+function configure_tools {
 
-  # set path /etc/vim/vimrc
-  local FILE="$CHROOT/etc/vim/vimrc"
+  # set paths
+  local FILE_VIMRC="$CHROOT/etc/vim/vimrc"
+  local FILE_BASHRC="$CHROOT/etc/bash.bashrc"
 
   # edit /etc/vim/vimrc
-  echo '' >> "$FILE"
-  echo 'filetype plugin indent on' >> "$FILE"
-  echo 'syntax on' >> "$FILE"
-  echo 'set nocp' >> "$FILE"
-  echo 'set background=light' >> "$FILE"
-  echo 'set tabstop=4' >> "$FILE"
-  echo 'set shiftwidth=4' >> "$FILE"
-  echo 'set expandtab' >> "$FILE"
+  echo '' >> "$FILE_VIMRC"
+  echo 'filetype plugin indent on' >> "$FILE_VIMRC"
+  echo 'syntax on' >> "$FILE_VIMRC"
+  echo 'set nocp' >> "$FILE_VIMRC"
+  echo 'set background=light' >> "$FILE_VIMRC"
+  echo 'set tabstop=4' >> "$FILE_VIMRC"
+  echo 'set shiftwidth=4' >> "$FILE_VIMRC"
+  echo 'set expandtab' >> "$FILE_VIMRC"
+
+  cat >> "$FILE_BASHRC" << 'EOF'
+
+# enable bash history search completion
+if [[ $- == *i* ]]; then
+
+  bind '"\e[A": history-search-backward'
+  bind '"\e[B": history-search-forward'
+fi
+
+EOF
+
 }
 
 function configure_users {
