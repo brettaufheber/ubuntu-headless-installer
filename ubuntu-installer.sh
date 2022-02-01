@@ -586,6 +586,9 @@ function task_install_base {
     apt-get -y install gradle
     apt-get -y install sbt
 
+    # install linting tool for shell scripts
+    apt-get -y install shellcheck
+
   fi
 
   # x86 related software
