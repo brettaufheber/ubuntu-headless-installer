@@ -559,6 +559,7 @@ function task_install_base {
     apt-get -y install python3-pyqt5 pyqt5-dev-tools
     apt-get -y install python3-gi
     apt-get -y install python3-numpy python3-scipy python3-matplotlib
+    apt-get -y install python-is-python3
 
     # install support for Ruby
     apt-get -y install ruby-full
