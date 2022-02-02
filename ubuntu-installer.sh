@@ -1389,7 +1389,7 @@ function get_username {
   CURRENT_PID=$$
   CURRENT_USER=$ORIGIN_USER
 
-  while [[ "$CURRENT_USER" == "root" && $CURRENT_PID > 0 ]]; do
+  while [[ "$CURRENT_USER" == "root" && $CURRENT_PID -gt 0 ]]; do
 
     RESULT=($(ps h -p $CURRENT_PID -o user,ppid))
     CURRENT_USER="${RESULT[0]}"
