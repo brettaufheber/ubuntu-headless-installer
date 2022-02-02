@@ -12,6 +12,9 @@ function main {
   SHELL_LOGIN=false
   USE_EFI=false
 
+  # declare local variables
+  local TASK
+
   # parse arguments
   OPTIONS_PARSED=$(getopt \
     --options 'hleu:n:c:m:b:x:y:z:' \
@@ -97,7 +100,7 @@ function main {
     fi
 
     # assign the task
-    local TASK="$1"
+    TASK="$1"
     shift 1
 
     # check if there is no unassigned argument left
@@ -305,11 +308,15 @@ function set_boot_dev_default {
 
 function task_install_script {
 
+  # declare local variables
+  local TEMPDIR
+  local BINDIR
+
   # verify arguments
   check_root_privileges
 
-  local TEMPDIR="$(mktemp -d)"
-  local BINDIR='/usr/local/sbin'
+  TEMPDIR="$(mktemp -d)"
+  BINDIR='/usr/local/sbin'
 
   git clone 'https://github.com/brettaufheber/ubuntu-installer.git' "$TEMPDIR"
 
@@ -321,11 +328,15 @@ function task_install_script {
 
 function task_install_desktop_helpers {
 
+  # declare local variables
+  local TEMPDIR
+  local BINDIR
+
   # verify arguments
   check_root_privileges
 
-  local TEMPDIR="$(mktemp -d)"
-  local BINDIR='/usr/local/sbin'
+  TEMPDIR="$(mktemp -d)"
+  BINDIR='/usr/local/sbin'
 
   git clone 'https://github.com/brettaufheber/ubuntu-installer.git' "$TEMPDIR"
 
@@ -405,13 +416,17 @@ function task_modify_user {
 
 function task_manage_package_sources {
 
+  # declare local variables
+  local SRCLIST
+  local COMPONENTS
+
   # verify arguments
   set_mirror_default
   check_root_privileges
 
   # set variables
-  local SRCLIST='/etc/apt/sources.list.d'
-  local COMPONENTS='main universe multiverse restricted'
+  SRCLIST='/etc/apt/sources.list.d'
+  COMPONENTS='main universe multiverse restricted'
 
   # set OS variables
   . /etc/os-release
@@ -779,6 +794,11 @@ function task_install_system {
 
 function task_install_container_image {
 
+  # declare local variables
+  local TEMPDIR
+  local IMAGE_RELEASE
+  local IMAGE_NAME
+
   # verify arguments
   set_bundle_array
   set_username_default
@@ -788,7 +808,7 @@ function task_install_container_image {
   check_software_bundle_names
 
   # create temporary directory
-  local TEMPDIR="$(mktemp -d)"
+  TEMPDIR="$(mktemp -d)"
 
   # set root directory
   CHROOT="$TEMPDIR/rootfs"
@@ -828,8 +848,8 @@ function task_install_container_image {
   unmounting_step_2
 
   # define image name
-  local IMAGE_RELEASE="$(cat '/proc/sys/kernel/random/uuid' | tr -dc '[:alnum:]')"
-  local IMAGE_NAME="ubuntu-$CODENAME-$IMAGE_RELEASE"
+  IMAGE_RELEASE="$(cat '/proc/sys/kernel/random/uuid' | tr -dc '[:alnum:]')"
+  IMAGE_NAME="ubuntu-$CODENAME-$IMAGE_RELEASE"
 
   # create metadata file
   echo "architecture: x86_64" > "$TEMPDIR/metadata.yaml"
@@ -899,21 +919,28 @@ function configure_hosts_template {
 
 function configure_fstab {
 
+  # declare local variables
+  local FILE
+  local FILE_UEFI
+  local UUID_ROOT
+  local UUID_HOME
+  local UUID_UEFI
+
   # set path /etc/fstab
-  local FILE="$CHROOT/etc/fstab"
+  FILE="$CHROOT/etc/fstab"
 
   # get UUID of each partition
-  local UUID_ROOT="$(blkid -s UUID -o value "$DEV_ROOT")"
-  local UUID_HOME="$(blkid -s UUID -o value "$DEV_HOME")"
+  UUID_ROOT="$(blkid -s UUID -o value "$DEV_ROOT")"
+  UUID_HOME="$(blkid -s UUID -o value "$DEV_HOME")"
 
   if "$USE_EFI"; then
 
-    local UUID_UEFI="$(blkid -s UUID -o value "$DEV_BOOT")"
-    local FILE_UEFI="$FILE"
+    UUID_UEFI="$(blkid -s UUID -o value "$DEV_BOOT")"
+    FILE_UEFI="$FILE"
 
   else
 
-    local FILE_UEFI="/dev/null"
+    FILE_UEFI="/dev/null"
 
   fi
 
@@ -930,9 +957,14 @@ function configure_fstab {
 
 function configure_tools {
 
+  # declare local variables
+  local FILE_VIMRC
+  local FILE_BASHRC
+  local COMPLETION_SCRIPT
+
   # set paths
-  local FILE_VIMRC="$CHROOT/etc/vim/vimrc"
-  local FILE_BASHRC="$CHROOT/etc/bash.bashrc"
+  FILE_VIMRC="$CHROOT/etc/vim/vimrc"
+  FILE_BASHRC="$CHROOT/etc/bash.bashrc"
 
   # edit /etc/vim/vimrc
   echo '' >> "$FILE_VIMRC"
@@ -956,7 +988,7 @@ fi
 EOF
 
   # get code for bash completion
-  local COMPLETION_SCRIPT="$(cat "$FILE_BASHRC" |
+  COMPLETION_SCRIPT="$(cat "$FILE_BASHRC" |
     sed -n '/# enable bash completion in interactive shells/,/^$/p' |
     sed '1,1d; $d' |
     cut -c 2-)"
@@ -968,8 +1000,11 @@ EOF
 
 function configure_users {
 
+  # declare local variables
+  local FILE
+
   # set path /etc/adduser.conf
-  local FILE="$CHROOT/etc/adduser.conf"
+  FILE="$CHROOT/etc/adduser.conf"
 
   # edit /etc/adduser.conf
   sed -ie 's/^#EXTRA_GROUPS=.*/EXTRA_GROUPS="'"$EXTRA_GROUPS"'"/' "$FILE"
@@ -1052,8 +1087,11 @@ function configure_network {
 
 function configure_packages {
 
+  # declare local variables
+  local TEMPFILE
+
   # temporary file for this installation step
-  local TEMPFILE="$(mktemp)"
+  TEMPFILE="$(mktemp)"
 
   # write installation script
   echo '#!/bin/bash' > "$TEMPFILE"
@@ -1104,8 +1142,11 @@ function install_minimal_system {
 
 function install_host_requirements {
 
+  # declare local variables
+  local TEMPFILE
+
   # temporary file for this installation step
-  local TEMPFILE="$(mktemp)"
+  TEMPFILE="$(mktemp)"
 
   # write installation script
   echo '#!/bin/bash' > "$TEMPFILE"
@@ -1157,8 +1198,11 @@ EOF
 
 function install_container_requirements {
 
+  # declare local variables
+  local TEMPFILE
+
   # temporary file for this installation step
-  local TEMPFILE="$(mktemp)"
+  TEMPFILE="$(mktemp)"
 
   # write installation script
   echo '#!/bin/bash' > "$TEMPFILE"
@@ -1335,10 +1379,15 @@ function show_help {
 
 function get_username {
 
-  local ORIGIN_USER="$USER"
-  local CURRENT_PID=$$
-  local CURRENT_USER=$ORIGIN_USER
+  # declare local variables
+  local ORIGIN_USER
+  local CURRENT_PID
+  local CURRENT_USER
   local RESULT
+
+  ORIGIN_USER="$USER"
+  CURRENT_PID=$$
+  CURRENT_USER=$ORIGIN_USER
 
   while [[ "$CURRENT_USER" == "root" && $CURRENT_PID > 0 ]]; do
 
@@ -1352,6 +1401,9 @@ function get_username {
 }
 
 function mounting_step_1 {
+
+  # declare local variables
+  local HOME_PATH
 
   # modify CLEANUP_MASK
   CLEANUP_MASK=$(( $CLEANUP_MASK | 1 ))
@@ -1367,7 +1419,7 @@ function mounting_step_1 {
   # mount $DEV_HOME
   if mount | grep -q "$DEV_HOME"; then
 
-    local HOME_PATH="$(df "$DEV_HOME" | grep -oE '(/[[:alnum:]]+)+$' | head -1)"
+    HOME_PATH="$(df "$DEV_HOME" | grep -oE '(/[[:alnum:]]+)+$' | head -1)"
 
     mkdir -p "$CHHOME"
     mount -o bind "$HOME_PATH" "$CHHOME"
@@ -1395,6 +1447,9 @@ function unmounting_step_1 {
 
 function mounting_step_2 {
 
+  # declare local variables
+  local BOOT_PATH
+
   # modify CLEANUP_MASK
   CLEANUP_MASK=$(( $CLEANUP_MASK | 2 ))
 
@@ -1414,7 +1469,7 @@ function mounting_step_2 {
     # mount $DEV_BOOT
     if mount | grep -q "$DEV_BOOT"; then
 
-      local BOOT_PATH="$(df "$DEV_BOOT" | grep -oE '(/[[:alnum:]]+)+$' | head -1)"
+      BOOT_PATH="$(df "$DEV_BOOT" | grep -oE '(/[[:alnum:]]+)+$' | head -1)"
 
       mkdir -p "$CHROOT/boot/efi"
       mount -o bind "$BOOT_PATH" "$CHROOT/boot/efi"
