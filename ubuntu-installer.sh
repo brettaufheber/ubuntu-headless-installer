@@ -16,11 +16,12 @@ function main {
   local TASK
 
   # parse arguments
-  OPTIONS_PARSED=$(getopt \
-    --options 'hleu:n:c:m:b:x:y:z:' \
-    --longoptions 'help,login,efi,username:,hostname:,codename:,mirror:,bundles:,dev-root:,dev-home:,dev-boot:' \
-    --name "$SELF_NAME" \
-    -- "$@"
+  OPTIONS_PARSED=$(
+    getopt \
+      --options 'hleu:n:c:m:b:x:y:z:' \
+      --longoptions 'help,login,efi,username:,hostname:,codename:,mirror:,bundles:,dev-root:,dev-home:,dev-boot:' \
+      --name "$SELF_NAME" \
+      -- "$@"
   )
 
   # replace arguments
@@ -29,47 +30,47 @@ function main {
   # apply arguments
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      -h|--help)
+      -h | --help)
         SHOW_HELP=true
         shift 1
         ;;
-      -l|--login)
+      -l | --login)
         SHELL_LOGIN=true
         shift 1
         ;;
-      -e|--efi)
+      -e | --efi)
         USE_EFI=true
         shift 1
         ;;
-      -u|--username)
+      -u | --username)
         USERNAME_NEW="$2"
         shift 2
         ;;
-      -n|--hostname)
+      -n | --hostname)
         HOSTNAME_NEW="$2"
         shift 2
         ;;
-      -c|--codename)
+      -c | --codename)
         CODENAME="$2"
         shift 2
         ;;
-      -m|--mirror)
+      -m | --mirror)
         MIRROR="$2"
         shift 2
         ;;
-      -b|--bundles)
+      -b | --bundles)
         BUNDLES="$2"
         shift 2
         ;;
-      -x|--dev-root)
+      -x | --dev-root)
         DEV_ROOT="$2"
         shift 2
         ;;
-      -y|--dev-home)
+      -y | --dev-home)
         DEV_HOME="$2"
         shift 2
         ;;
-      -z|--dev-boot)
+      -z | --dev-boot)
         DEV_BOOT="$2"
         shift 2
         ;;
@@ -206,12 +207,12 @@ function check_software_bundle_names {
 
   for i in "${!BARRAY[@]}"; do
 
-    if [[ ${BARRAY[$i]} != 'net' ]] && \
-        [[ ${BARRAY[$i]} != 'virt' ]] && \
-        [[ ${BARRAY[$i]} != 'dev' ]] && \
-        [[ ${BARRAY[$i]} != 'desktop' ]] && \
-        [[ ${BARRAY[$i]} != 'laptop' ]] && \
-        [[ ${BARRAY[$i]} != 'web' ]] && \
+    if [[ ${BARRAY[$i]} != 'net' ]] &&
+        [[ ${BARRAY[$i]} != 'virt' ]] &&
+        [[ ${BARRAY[$i]} != 'dev' ]] &&
+        [[ ${BARRAY[$i]} != 'desktop' ]] &&
+        [[ ${BARRAY[$i]} != 'laptop' ]] &&
+        [[ ${BARRAY[$i]} != 'web' ]] &&
         [[ ${BARRAY[$i]} != 'x86' ]]; then
 
       echo "$SELF_NAME: require valid bundle names [net, virt, dev, desktop, laptop, web, x86]" >&2
@@ -429,7 +430,7 @@ function task_manage_package_sources {
   COMPONENTS='main universe multiverse restricted'
 
   # set OS variables
-  . /etc/os-release
+  source /etc/os-release
 
   # add package sources
   add-apt-repository -s "deb $MIRROR $UBUNTU_CODENAME $COMPONENTS"
@@ -619,7 +620,7 @@ function task_install_base {
   if [[ ${BARRAY[*]} =~ 'desktop' ]]; then
 
     # get current system language
-    . /etc/default/locale
+    source /etc/default/locale
     SYSLANG="$(echo "$LANG" | grep -oE '^([a-zA-Z]+)' | sed -r 's/^(C|POSIX)$/en/')"
     SYSLANG="${SYSLANG:-'en'}"
 
@@ -852,26 +853,28 @@ function task_install_container_image {
   IMAGE_NAME="ubuntu-$CODENAME-$IMAGE_RELEASE"
 
   # create metadata file
-  echo "architecture: x86_64" > "$TEMPDIR/metadata.yaml"
-  echo "creation_date: $(date +%s)" >> "$TEMPDIR/metadata.yaml"
-  echo "properties:" >> "$TEMPDIR/metadata.yaml"
-  echo "  architecture: x86_64" >> "$TEMPDIR/metadata.yaml"
-  echo "  description: Ubuntu $CODENAME with extended tooling" >> "$TEMPDIR/metadata.yaml"
-  echo "  os: ubuntu" >> "$TEMPDIR/metadata.yaml"
-  echo "  release: $CODENAME $IMAGE_RELEASE" >> "$TEMPDIR/metadata.yaml"
-  echo "templates:" >> "$TEMPDIR/metadata.yaml"
-  echo "  /etc/hosts:" >> "$TEMPDIR/metadata.yaml"
-  echo "    when:" >> "$TEMPDIR/metadata.yaml"
-  echo "      - create" >> "$TEMPDIR/metadata.yaml"
-  echo "      - copy" >> "$TEMPDIR/metadata.yaml"
-  echo "      - rename" >> "$TEMPDIR/metadata.yaml"
-  echo "    template: hosts.tpl" >> "$TEMPDIR/metadata.yaml"
-  echo "  /etc/hostname:" >> "$TEMPDIR/metadata.yaml"
-  echo "    when:" >> "$TEMPDIR/metadata.yaml"
-  echo "      - create" >> "$TEMPDIR/metadata.yaml"
-  echo "      - copy" >> "$TEMPDIR/metadata.yaml"
-  echo "      - rename" >> "$TEMPDIR/metadata.yaml"
-  echo "    template: hostname.tpl" >> "$TEMPDIR/metadata.yaml"
+  {
+    echo "architecture: x86_64"
+    echo "creation_date: $(date +%s)"
+    echo "properties:"
+    echo "  architecture: x86_64"
+    echo "  description: Ubuntu $CODENAME with extended tooling"
+    echo "  os: ubuntu"
+    echo "  release: $CODENAME $IMAGE_RELEASE"
+    echo "templates:"
+    echo "  /etc/hosts:"
+    echo "    when:"
+    echo "      - create"
+    echo "      - copy"
+    echo "      - rename"
+    echo "    template: hosts.tpl"
+    echo "  /etc/hostname:"
+    echo "    when:"
+    echo "      - create"
+    echo "      - copy"
+    echo "      - rename"
+    echo "    template: hostname.tpl"
+  } > "$TEMPDIR/metadata.yaml"
 
   # create template directory
   mkdir "$TEMPDIR/templates"
@@ -901,20 +904,32 @@ function configure_hosts {
 
 function configure_hosts_template {
 
+  # declare local variables
+  local HOSTNAME
+  local FILE_HOSTNAME
+  local FILE_HOSTS
+
+  # set variables from arguments
+  HOSTNAME="$1"
+  FILE_HOSTNAME="$2"
+  FILE_HOSTS="$3"
+
   # edit /etc/hostname
-  echo "$1" > "$2"
+  echo "$HOSTNAME" > "$FILE_HOSTNAME"
 
   # edit /etc/hosts
-  echo "127.0.0.1   localhost" > "$3"
-  echo "127.0.1.1   $1" >> "$3"
-  echo "" >> "$3"
-  echo "# The following lines are desirable for IPv6 capable hosts" >> "$3"
-  echo "::1         ip6-localhost ip6-loopback" >> "$3"
-  echo "fe00::0     ip6-localnet" >> "$3"
-  echo "ff00::0     ip6-mcastprefix" >> "$3"
-  echo "ff02::1     ip6-allnodes" >> "$3"
-  echo "ff02::2     ip6-allrouters" >> "$3"
-  echo "ff02::3     ip6-allhosts" >> "$3"
+  {
+    echo "127.0.0.1   localhost"
+    echo "127.0.1.1   $HOSTNAME"
+    echo ""
+    echo "# The following lines are desirable for IPv6 capable hosts"
+    echo "::1         ip6-localhost ip6-loopback"
+    echo "fe00::0     ip6-localnet"
+    echo "ff00::0     ip6-mcastprefix"
+    echo "ff02::1     ip6-allnodes"
+    echo "ff02::2     ip6-allrouters"
+    echo "ff02::3     ip6-allhosts"
+  } > "$FILE_HOSTS"
 }
 
 function configure_fstab {
@@ -966,16 +981,20 @@ function configure_tools {
   FILE_VIMRC="$CHROOT/etc/vim/vimrc"
   FILE_BASHRC="$CHROOT/etc/bash.bashrc"
 
-  # edit /etc/vim/vimrc
-  echo '' >> "$FILE_VIMRC"
-  echo 'filetype plugin indent on' >> "$FILE_VIMRC"
-  echo 'syntax on' >> "$FILE_VIMRC"
-  echo 'set nocp' >> "$FILE_VIMRC"
-  echo 'set background=light' >> "$FILE_VIMRC"
-  echo 'set tabstop=4' >> "$FILE_VIMRC"
-  echo 'set shiftwidth=4' >> "$FILE_VIMRC"
-  echo 'set expandtab' >> "$FILE_VIMRC"
+  # add vim settings
+  cat >> "$FILE_VIMRC" << 'EOF'
 
+filetype plugin indent on
+syntax on
+set nocp
+set background=light
+set tabstop=4
+set shiftwidth=4
+set expandtab
+
+EOF
+
+  # enable bash history search completion
   cat >> "$FILE_BASHRC" << 'EOF'
 
 # enable bash history search completion
@@ -1391,13 +1410,13 @@ function get_username {
 
   while [[ "$CURRENT_USER" == "root" && $CURRENT_PID -gt 0 ]]; do
 
-    RESULT=($(ps h -p $CURRENT_PID -o user,ppid))
-    CURRENT_USER="${RESULT[0]}"
-    CURRENT_PID="${RESULT[1]}"
+    RESULT="$(ps -hp $CURRENT_PID -o user,ppid | sed -e 's/\s\s*/ /')"
+    CURRENT_USER="$(echo "$RESULT" | cut -d ' ' -f 1)"
+    CURRENT_PID="$(echo "$RESULT" | cut -d ' ' -f 2)"
 
   done
 
-  getent passwd "$CURRENT_USER" | cut -d : -f 1
+  getent passwd "$CURRENT_USER" | cut -d ':' -f 1
 }
 
 function mounting_step_1 {
@@ -1406,7 +1425,7 @@ function mounting_step_1 {
   local HOME_PATH
 
   # modify CLEANUP_MASK
-  CLEANUP_MASK=$(( $CLEANUP_MASK | 1 ))
+  CLEANUP_MASK=$(($CLEANUP_MASK | 1))
 
   # set path to mounting point
   CHROOT="/mnt/ubuntu-$(cat '/proc/sys/kernel/random/uuid')"
@@ -1435,7 +1454,7 @@ function mounting_step_1 {
 function unmounting_step_1 {
 
   # check whether the step is required or not
-  if [[ $(( $CLEANUP_MASK & 1 )) -ne 0 ]]; then
+  if [[ $(($CLEANUP_MASK & 1)) -ne 0 ]]; then
 
     # unmount home directory and directory root
     umount "$CHHOME"
@@ -1451,7 +1470,7 @@ function mounting_step_2 {
   local BOOT_PATH
 
   # modify CLEANUP_MASK
-  CLEANUP_MASK=$(( $CLEANUP_MASK | 2 ))
+  CLEANUP_MASK=$(($CLEANUP_MASK | 2))
 
   # flush the cache
   sync
@@ -1487,7 +1506,7 @@ function mounting_step_2 {
 function unmounting_step_2 {
 
   # check whether the step is required or not
-  if [[ $(( $CLEANUP_MASK & 2 )) -ne 0 ]]; then
+  if [[ $(($CLEANUP_MASK & 2)) -ne 0 ]]; then
 
     # flush the cache
     sync
