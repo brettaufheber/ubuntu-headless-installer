@@ -1169,8 +1169,8 @@ function install_host_requirements {
 
   # write installation script
   echo '#!/bin/bash' > "$TEMPFILE"
-  echo '' > "$TEMPFILE"
-  echo "USE_EFI=$USE_EFI" > "$TEMPFILE"
+  echo '' >> "$TEMPFILE"
+  echo "USE_EFI=$USE_EFI" >> "$TEMPFILE"
   cat >> "$TEMPFILE" << 'EOF'
 
 # install main packages
