@@ -162,7 +162,7 @@ function check_root_privileges {
 
 function check_username {
 
-  if [[ -z "$USERNAME_NEW" ]] || ! echo "$USERNAME_NEW" | grep -qE "$NAME_REGEX"; then
+  if [[ -z "${USERNAME_NEW:-}" ]] || ! echo "${USERNAME_NEW:-}" | grep -qE "$NAME_REGEX"; then
 
     echo "$SELF_NAME: require valid username" >&2
     exit 1
@@ -172,7 +172,7 @@ function check_username {
 
 function check_username_exists {
 
-  if getent passwd "$USERNAME_NEW" > /dev/null; then
+  if getent passwd "${USERNAME_NEW:-}" > /dev/null; then
 
     if ! "$1"; then
 
@@ -195,7 +195,7 @@ function check_username_exists {
 
 function check_codename {
 
-  if [[ -z "$CODENAME" ]] || ! echo "$CODENAME" | grep -qE '^[a-z]*$'; then
+  if [[ -z "${CODENAME:-}" ]] || ! echo "${CODENAME:-}" | grep -qE '^[a-z]*$'; then
 
     echo "$SELF_NAME: require valid Ubuntu codename" >&2
     exit 1
@@ -225,14 +225,14 @@ function check_software_bundle_names {
 
 function check_mounting {
 
-  if [[ -z "$DEV_ROOT" ]] || [[ ! -b "$DEV_ROOT" ]] || mount | grep -q "$DEV_ROOT"; then
+  if [[ -z "${DEV_ROOT:-}" ]] || [[ ! -b "${DEV_ROOT:-}" ]] || mount | grep -q "${DEV_ROOT:-}"; then
 
     echo "$SELF_NAME: require unmounted device file for /" >&2
     exit 1
 
   fi
 
-  if [[ -z "$DEV_HOME" ]] || [[ ! -b "$DEV_HOME" ]]; then
+  if [[ -z "${DEV_HOME:-}" ]] || [[ ! -b "${DEV_HOME:-}" ]]; then
 
     echo "$SELF_NAME: require device file for /home" >&2
     exit 1
@@ -243,7 +243,7 @@ function check_mounting {
 function set_bundle_array {
 
   # create bundle array
-  if [[ -z "$BUNDLES" ]]; then
+  if [[ -z "${BUNDLES:-}" ]]; then
 
     declare -a BARRAY
 
@@ -258,14 +258,14 @@ function set_bundle_array {
 function set_username_default {
 
   # use name of current user by default
-  if [[ -z "$USERNAME_NEW" ]]; then
+  if [[ -z "${USERNAME_NEW:-}" ]]; then
 
     USERNAME_NEW="$(get_username)"
 
   fi
 
   # make sure the username is different to root
-  if [[ $USERNAME_NEW == "root" ]]; then
+  if [[ "${USERNAME_NEW:-}" == "root" ]]; then
 
     echo "$SELF_NAME: require username different to root" >&2
     exit 1
@@ -276,7 +276,7 @@ function set_username_default {
 function set_hostname_default {
 
   # use current hostname by default
-  if [[ -z "$HOSTNAME_NEW" ]]; then
+  if [[ -z "${HOSTNAME_NEW:-}" ]]; then
 
     HOSTNAME_NEW="$HOSTNAME"
 
@@ -286,7 +286,7 @@ function set_hostname_default {
 function set_mirror_default {
 
   # use mirror list by default
-  if [[ -z "$MIRROR" ]]; then
+  if [[ -z "${MIRROR:-}" ]]; then
 
     MIRROR='mirror://mirrors.ubuntu.com/mirrors.txt'
 
@@ -298,7 +298,7 @@ function set_boot_dev_default {
   if "$USE_EFI"; then
 
     # use mounted boot partition by default
-    if [[ -z "$DEV_BOOT" ]]; then
+    if [[ -z "${DEV_BOOT:-}" ]]; then
 
       DEV_BOOT="$(cat /proc/mounts | grep -E /boot/efi | cut -d ' ' -f 1)"
 
@@ -766,7 +766,7 @@ function task_install_system {
   chroot "$CHROOT" "$SELF_NAME" manage-package-sources -m "$MIRROR"
 
   # install software
-  chroot "$CHROOT" "$SELF_NAME" install-base -b "$BUNDLES"
+  chroot "$CHROOT" "$SELF_NAME" install-base -b "${BUNDLES:-}"
 
   # do some modifications for desktop environments
   configure_desktop
@@ -837,7 +837,7 @@ function task_install_container_image {
   chroot "$CHROOT" "$SELF_NAME" manage-package-sources -m "$MIRROR"
 
   # install software
-  chroot "$CHROOT" "$SELF_NAME" install-base -b "$BUNDLES"
+  chroot "$CHROOT" "$SELF_NAME" install-base -b "${BUNDLES:-}"
 
   # do some modifications for desktop environments
   configure_desktop
@@ -955,6 +955,7 @@ function configure_fstab {
 
   else
 
+    UUID_UEFI=""
     FILE_UEFI="/dev/null"
 
   fi
@@ -1033,7 +1034,7 @@ function configure_users {
 function configure_network {
 
   # set HTTP proxy
-  if [[ -n "$http_proxy" ]]; then
+  if [[ -n "${http_proxy:-}" ]]; then
 
     echo "http_proxy=$http_proxy" >> "$CHROOT/etc/environment"
     echo "HTTP_PROXY=$http_proxy" >> "$CHROOT/etc/environment"
@@ -1041,7 +1042,7 @@ function configure_network {
   fi
 
   # set HTTPS proxy
-  if [[ -n "$https_proxy" ]]; then
+  if [[ -n "${https_proxy:-}" ]]; then
 
     echo "https_proxy=$https_proxy" >> "$CHROOT/etc/environment"
     echo "HTTPS_PROXY=$https_proxy" >> "$CHROOT/etc/environment"
@@ -1049,7 +1050,7 @@ function configure_network {
   fi
 
   # set FTP proxy
-  if [[ -n "$ftp_proxy" ]]; then
+  if [[ -n "${ftp_proxy:-}" ]]; then
 
     echo "ftp_proxy=$ftp_proxy" >> "$CHROOT/etc/environment"
     echo "FTP_PROXY=$ftp_proxy" >> "$CHROOT/etc/environment"
@@ -1057,7 +1058,7 @@ function configure_network {
   fi
 
   # set all socks proxy
-  if [[ -n "$all_proxy" ]]; then
+  if [[ -n "${all_proxy:-}" ]]; then
 
     echo "all_proxy=$all_proxy" >> "$CHROOT/etc/environment"
     echo "ALL_PROXY=$all_proxy" >> "$CHROOT/etc/environment"
@@ -1065,7 +1066,7 @@ function configure_network {
   fi
 
   # set ignore-hosts
-  if [[ -n "$no_proxy" ]]; then
+  if [[ -n "${no_proxy:-}" ]]; then
 
     echo "no_proxy=$no_proxy" >> "$CHROOT/etc/environment"
     echo "NO_PROXY=$no_proxy" >> "$CHROOT/etc/environment"
@@ -1548,7 +1549,7 @@ function interrupt_trap {
   exit 2
 }
 
-set -eEo pipefail
+set -euEo pipefail
 CLEANUP_MASK=0
 trap 'RC=$?; error_trap "$RC" "$LINENO"' ERR
 trap 'interrupt_trap' INT
