@@ -20,6 +20,7 @@ function main {
   LONG_OPTIONS='help,login,efi'
   LONG_OPTIONS="$LONG_OPTIONS"',username:,hostname:,codename:,bundles:,dev-root:,dev-home:,dev-boot:'
   LONG_OPTIONS="$LONG_OPTIONS"',mirror:,locales:,time-zone:'
+  LONG_OPTIONS="$LONG_OPTIONS"',keyboard-model:,keyboard-layout:,keyboard-variant:,keyboard-options:'
 
   # parse arguments
   OPTIONS_PARSED=$(
@@ -86,6 +87,22 @@ function main {
         ;;
       --time-zone)
         TZ="$2"
+        shift 2
+        ;;
+      --keyboard-model)
+        XKBMODEL="$2"
+        shift 2
+        ;;
+      --keyboard-layout)
+        XKBLAYOUT="$2"
+        shift 2
+        ;;
+      --keyboard-variant)
+        XKBVARIANT="$2"
+        shift 2
+        ;;
+      --keyboard-options)
+        XKBOPTIONS="$2"
         shift 2
         ;;
       --)
@@ -160,6 +177,9 @@ function main {
         ;;
       configure-tzdata)
         task_configure_tzdata
+        ;;
+      configure-keyboard)
+        task_configure_keyboard
         ;;
       *)
         echo "$SELF_NAME: require a valid task" >&2
@@ -772,7 +792,11 @@ function task_install_system {
   # configure packages
   chroot "$CHROOT" "$SELF_NAME" configure-locales --locales "${LOCALES:-}"
   chroot "$CHROOT" "$SELF_NAME" configure-tzdata --time-zone "${TZ:-}"
-  configure_packages
+  chroot "$CHROOT" "$SELF_NAME" configure-keyboard \
+    --keyboard-model "${XKBMODEL:-}" \
+    --keyboard-layout "${XKBLAYOUT:-}" \
+    --keyboard-variant "${XKBVARIANT:-}" \
+    --keyboard-options "${XKBOPTIONS:-}"
 
   # install requirements, kernel and bootloader
   install_host_requirements
@@ -845,7 +869,6 @@ function task_install_container_image {
   # configure packages
   chroot "$CHROOT" "$SELF_NAME" configure-locales --locales "${LOCALES:-}"
   chroot "$CHROOT" "$SELF_NAME" configure-tzdata --time-zone "${TZ:-}"
-  configure_packages
 
   # install requirements
   install_container_requirements
@@ -979,6 +1002,57 @@ function task_configure_tzdata {
 
     # interactive configuration by user
     dpkg-reconfigure tzdata
+
+  fi
+}
+
+function task_configure_keyboard {
+
+  # declare local variables
+  local FILE
+
+  # verify arguments
+  check_root_privileges
+
+  # set path /etc/default/keyboard
+  FILE="/etc/default/keyboard"
+
+  if [[ -n "${XKBMODEL:-}" ]]; then
+
+    sed -ie 's/^XKBMODEL=.*/XKBMODEL="'"$XKBMODEL"'"/' "$FILE"
+
+  fi
+
+  if [[ -n "${XKBLAYOUT:-}" ]]; then
+
+    sed -ie 's/^XKBLAYOUT=.*/XKBLAYOUT="'"$XKBLAYOUT"'"/' "$FILE"
+
+  fi
+
+  if [[ -n "${XKBVARIANT:-}" ]]; then
+
+    sed -ie 's/^XKBVARIANT=.*/XKBVARIANT="'"$XKBVARIANT"'"/' "$FILE"
+
+  fi
+
+  if [[ -n "${XKBOPTIONS:-}" ]]; then
+
+    sed -ie 's/^XKBOPTIONS=.*/XKBOPTIONS="'"$XKBOPTIONS"'"/' "$FILE"
+
+  fi
+
+  if [[ -n "${XKBMODEL:-}" ]] ||
+      [[ -n "${XKBLAYOUT:-}" ]] ||
+      [[ -n "${XKBVARIANT:-}" ]] ||
+      [[ -n "${XKBOPTIONS:-}" ]]; then
+
+    # set preconfigured keyboard layout
+    dpkg-reconfigure --frontend noninteractive keyboard-configuration
+
+  else
+
+    # interactive configuration by user
+    dpkg-reconfigure keyboard-configuration
 
   fi
 }
@@ -1190,28 +1264,6 @@ function configure_network {
     touch "$CHROOT/etc/NetworkManager/conf.d/10-globally-managed-devices.conf"
 
   fi
-}
-
-function configure_packages {
-
-  # declare local variables
-  local TEMPFILE
-
-  # temporary file for this installation step
-  TEMPFILE="$(mktemp)"
-
-  # write installation script
-  echo '#!/bin/bash' > "$TEMPFILE"
-  cat >> "$TEMPFILE" << 'EOF'
-
-# configuration by user
-dpkg-reconfigure keyboard-configuration
-
-EOF
-
-  # execute script
-  chroot "$CHROOT" /bin/bash "$TEMPFILE"
-  rm "$TEMPFILE"
 }
 
 function configure_desktop {
