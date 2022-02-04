@@ -1515,39 +1515,15 @@ EOF
 
 function show_help {
 
-  echo "Usage: $SELF_NAME <task>"
-  echo "   ( -u | --username ) <your username>"
-  echo "   ( -n | --hostname ) <hostname>"
-  echo "   ( -c | --codename ) <Ubuntu codename: bionic|cosmic|...>"
-  echo "   ( -b | --bundles  ) <desktop,dev,...>"
-  echo "   ( -x | --dev-root ) <block device file for system partition '/'>"
-  echo "   ( -y | --dev-home ) <block device file for home partition '/home'>"
-  echo "   (      --mirror   ) <mirror for APT package manager>"
-  echo ""
-  echo "Show this text: $SELF_NAME ( -h | --help )"
-  echo ""
-  echo "Enter shell after installation: $SELF_NAME ( -l | --login )"
-  echo ""
-  echo "Tasks:"
-  echo "   * install-script: install the newest version of this script"
-  echo "   * install-desktop-helpers: install helper scripts for desktops"
-  echo "   * update: update the system with all package managers"
-  echo "   * create-user: create user with extra groups and home-directory"
-  echo "   * modify-user: add extra groups to user and create home-directory"
-  echo "   * manage-package-sources: add package sources"
-  echo "   * install-base: install bundles and tools for a general purpose system"
-  echo "   * install-system: install Ubuntu to block device files"
-  echo "   * install-container-image: install a generated LXD/LXC image"
-  echo ""
-  echo "Software bundles:"
-  echo "   * net: network tooling"
-  echo "   * virt: QEMU/KVM with extended tooling"
-  echo "   * dev: basic equipment for software developers"
-  echo "   * desktop: minimal GNOME desktop"
-  echo "   * laptop: power saving tools for mobile devices"
-  echo "   * web: server and proxy for web"
-  echo "   * x86: architecture specific tools and libraries (requires dev)"
-  echo ""
+  # declare local variables
+  local URL
+
+  # set project website URL
+  URL='https://github.com/brettaufheber/ubuntu-installer#usage'
+
+  # open default browser with project website
+  echo "$SELF_NAME: for help, see the project website $URL"
+  xdg-open "$URL" &> /dev/null
 }
 
 function get_username {
