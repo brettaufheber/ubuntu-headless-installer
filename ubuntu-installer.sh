@@ -951,6 +951,15 @@ fi
 
 EOF
 
+  # get code for bash completion
+  local COMPLETION_SCRIPT="$(cat "$FILE_BASHRC" |
+    sed -n '/# enable bash completion in interactive shells/,/^$/p' |
+    sed '1,1d; $d' |
+    cut -c 2-)"
+
+  # enable bash completion
+  echo "" >> "$FILE_BASHRC"
+  echo "$COMPLETION_SCRIPT" >> "$FILE_BASHRC"
 }
 
 function configure_users {
