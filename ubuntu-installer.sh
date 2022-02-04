@@ -14,12 +14,18 @@ function main {
 
   # declare local variables
   local TASK
+  local LONG_OPTIONS
+
+  #define long options
+  LONG_OPTIONS='help,login,efi'
+  LONG_OPTIONS="$LONG_OPTIONS"',username:,hostname:,codename:,bundles:,dev-root:,dev-home:,dev-boot:'
+  LONG_OPTIONS="$LONG_OPTIONS"',mirror:'
 
   # parse arguments
   OPTIONS_PARSED=$(
     getopt \
-      --options 'hleu:n:c:m:b:x:y:z:' \
-      --longoptions 'help,login,efi,username:,hostname:,codename:,mirror:,bundles:,dev-root:,dev-home:,dev-boot:' \
+      --options 'hleu:n:c:b:x:y:z:' \
+      --longoptions "$LONG_OPTIONS" \
       --name "$SELF_NAME" \
       -- "$@"
   )
@@ -54,10 +60,6 @@ function main {
         CODENAME="$2"
         shift 2
         ;;
-      -m | --mirror)
-        MIRROR="$2"
-        shift 2
-        ;;
       -b | --bundles)
         BUNDLES="$2"
         shift 2
@@ -72,6 +74,10 @@ function main {
         ;;
       -z | --dev-boot)
         DEV_BOOT="$2"
+        shift 2
+        ;;
+      --mirror)
+        MIRROR="$2"
         shift 2
         ;;
       --)
@@ -756,7 +762,7 @@ function task_install_system {
   install_host_requirements
 
   # manage package sources
-  chroot "$CHROOT" "$SELF_NAME" manage-package-sources -m "$MIRROR"
+  chroot "$CHROOT" "$SELF_NAME" manage-package-sources --mirror "$MIRROR"
 
   # install software
   chroot "$CHROOT" "$SELF_NAME" install-base -b "${BUNDLES:-}"
@@ -827,7 +833,7 @@ function task_install_container_image {
   install_container_requirements
 
   # manage package sources
-  chroot "$CHROOT" "$SELF_NAME" manage-package-sources -m "$MIRROR"
+  chroot "$CHROOT" "$SELF_NAME" manage-package-sources --mirror "$MIRROR"
 
   # install software
   chroot "$CHROOT" "$SELF_NAME" install-base -b "${BUNDLES:-}"
@@ -1359,10 +1365,10 @@ function show_help {
   echo "   ( -u | --username ) <your username>"
   echo "   ( -n | --hostname ) <hostname>"
   echo "   ( -c | --codename ) <Ubuntu codename: bionic|cosmic|...>"
-  echo "   ( -m | --mirror   ) <mirror for APT package manager>"
   echo "   ( -b | --bundles  ) <desktop,dev,...>"
   echo "   ( -x | --dev-root ) <block device file for system partition '/'>"
   echo "   ( -y | --dev-home ) <block device file for home partition '/home'>"
+  echo "   (      --mirror   ) <mirror for APT package manager>"
   echo ""
   echo "Show this text: $SELF_NAME ( -h | --help )"
   echo ""
