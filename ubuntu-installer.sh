@@ -19,7 +19,7 @@ function main {
   #define long options
   LONG_OPTIONS='help,login,efi'
   LONG_OPTIONS="$LONG_OPTIONS"',username:,hostname:,codename:,bundles:,dev-root:,dev-home:,dev-boot:'
-  LONG_OPTIONS="$LONG_OPTIONS"',mirror:'
+  LONG_OPTIONS="$LONG_OPTIONS"',mirror:,locales:'
 
   # parse arguments
   OPTIONS_PARSED=$(
@@ -78,6 +78,10 @@ function main {
         ;;
       --mirror)
         MIRROR="$2"
+        shift 2
+        ;;
+      --locales)
+        LOCALES="$2"
         shift 2
         ;;
       --)
@@ -146,6 +150,9 @@ function main {
         ;;
       install-container-image)
         task_install_container_image
+        ;;
+      configure-locales)
+        task_configure_locales
         ;;
       *)
         echo "$SELF_NAME: require a valid task" >&2
@@ -756,6 +763,7 @@ function task_install_system {
   mounting_step_2
 
   # configure packages
+  chroot "$CHROOT" "$SELF_NAME" configure-locales --locales "${LOCALES:-}"
   configure_packages
 
   # install requirements, kernel and bootloader
@@ -827,6 +835,7 @@ function task_install_container_image {
   mounting_step_2
 
   # configure packages
+  chroot "$CHROOT" "$SELF_NAME" configure-locales --locales "${LOCALES:-}"
   configure_packages
 
   # install requirements
@@ -893,6 +902,58 @@ function task_install_container_image {
 
   # show that we are done here
   echo "$SELF_NAME: image $IMAGE_NAME imported"
+}
+
+function task_configure_locales {
+
+  # declare local variables
+  local LOCALES_LIST
+  local PRIMARY_LOCAL
+
+  # verify arguments
+  check_root_privileges
+
+  if [[ -n "${LOCALES:-}" ]]; then
+
+    LOCALES_LIST="$(echo "$LOCALES" | tr ',' ' ')"
+    PRIMARY_LOCAL="$(echo "$LOCALES_LIST" | cut -d ' ' -f 1)"
+
+    for i in $LOCALES_LIST; do
+
+      if [[ "$i" != "POSIX" ]] && [[ "$i" != "C" ]] && [[ "$i" != "C."* ]]; then
+
+        # generate a locale for each entry in list
+        locale-gen "$i"
+
+      fi
+
+    done
+
+    export LANG="$PRIMARY_LOCAL"
+    export LANGUAGE=""
+    export LC_CTYPE="$PRIMARY_LOCAL"
+    export LC_NUMERIC="$PRIMARY_LOCAL"
+    export LC_TIME="$PRIMARY_LOCAL"
+    export LC_COLLATE="$PRIMARY_LOCAL"
+    export LC_MONETARY="$PRIMARY_LOCAL"
+    export LC_MESSAGES="POSIX"
+    export LC_PAPER="$PRIMARY_LOCAL"
+    export LC_NAME="$PRIMARY_LOCAL"
+    export LC_ADDRESS="$PRIMARY_LOCAL"
+    export LC_TELEPHONE="$PRIMARY_LOCAL"
+    export LC_MEASUREMENT="$PRIMARY_LOCAL"
+    export LC_IDENTIFICATION="$PRIMARY_LOCAL"
+    export LC_ALL=""
+
+    # the first locale defined in the list will be installed
+    dpkg-reconfigure --frontend noninteractive locales
+
+  else
+
+    # interactive configuration by user
+    dpkg-reconfigure locales
+
+  fi
 }
 
 function configure_hosts {
@@ -1116,12 +1177,7 @@ function configure_packages {
   echo '#!/bin/bash' > "$TEMPFILE"
   cat >> "$TEMPFILE" << 'EOF'
 
-# set default locale
-locale-gen en_US.UTF-8 en_GB.UTF-8 de_DE.UTF-8
-update-locale LANG=C.UTF-8 LC_MESSAGES=POSIX
-
 # configuration by user
-dpkg-reconfigure locales
 dpkg-reconfigure tzdata
 dpkg-reconfigure keyboard-configuration
 
