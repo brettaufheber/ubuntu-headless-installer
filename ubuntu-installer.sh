@@ -19,7 +19,7 @@ function main {
   #define long options
   LONG_OPTIONS='help,login,efi'
   LONG_OPTIONS="$LONG_OPTIONS"',username:,hostname:,codename:,bundles:,dev-root:,dev-home:,dev-boot:'
-  LONG_OPTIONS="$LONG_OPTIONS"',mirror:,locales:,time-zone:'
+  LONG_OPTIONS="$LONG_OPTIONS"',mirror:,locales:,time-zone:,user-gecos:,password:'
   LONG_OPTIONS="$LONG_OPTIONS"',keyboard-model:,keyboard-layout:,keyboard-variant:,keyboard-options:'
 
   # parse arguments
@@ -87,6 +87,14 @@ function main {
         ;;
       --time-zone)
         TZ="$2"
+        shift 2
+        ;;
+      --user-gecos)
+        USER_GECOS="$2"
+        shift 2
+        ;;
+      --password)
+        PASSWORD="$2"
         shift 2
         ;;
       --keyboard-model)
@@ -429,7 +437,16 @@ function task_create_user {
   check_username_exists false
 
   # create user and home-directory if not exist
-  adduser --add_extra_groups "$USERNAME_NEW"
+  if [[ -n "${PASSWORD:-}" ]]; then
+
+    adduser --add_extra_groups --disabled-password --gecos "${USER_GECOS:-}" "$USERNAME_NEW"
+    usermod --password "$PASSWORD" "$USERNAME_NEW"
+
+  else
+
+    adduser --add_extra_groups --gecos "${USER_GECOS:-}" "$USERNAME_NEW"
+
+  fi
 }
 
 function task_modify_user {
@@ -814,7 +831,10 @@ function task_install_system {
   chroot "$CHROOT" apt-get clean
 
   # create user
-  chroot "$CHROOT" "$SELF_NAME" create-user -u "$USERNAME_NEW"
+  chroot "$CHROOT" "$SELF_NAME" create-user \
+    --username "$USERNAME_NEW" \
+    --password "${PASSWORD:-}" \
+    --user-gecos "${USER_GECOS:-}"
 
   # login to shell for diagnostic purposes
   if "$SHELL_LOGIN"; then
