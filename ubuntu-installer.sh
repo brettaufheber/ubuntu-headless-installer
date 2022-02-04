@@ -19,7 +19,7 @@ function main {
   #define long options
   LONG_OPTIONS='help,login,efi'
   LONG_OPTIONS="$LONG_OPTIONS"',username:,hostname:,codename:,bundles:,dev-root:,dev-home:,dev-boot:'
-  LONG_OPTIONS="$LONG_OPTIONS"',mirror:,locales:'
+  LONG_OPTIONS="$LONG_OPTIONS"',mirror:,locales:,time-zone:'
 
   # parse arguments
   OPTIONS_PARSED=$(
@@ -82,6 +82,10 @@ function main {
         ;;
       --locales)
         LOCALES="$2"
+        shift 2
+        ;;
+      --time-zone)
+        TZ="$2"
         shift 2
         ;;
       --)
@@ -153,6 +157,9 @@ function main {
         ;;
       configure-locales)
         task_configure_locales
+        ;;
+      configure-tzdata)
+        task_configure_tzdata
         ;;
       *)
         echo "$SELF_NAME: require a valid task" >&2
@@ -764,6 +771,7 @@ function task_install_system {
 
   # configure packages
   chroot "$CHROOT" "$SELF_NAME" configure-locales --locales "${LOCALES:-}"
+  chroot "$CHROOT" "$SELF_NAME" configure-tzdata --time-zone "${TZ:-}"
   configure_packages
 
   # install requirements, kernel and bootloader
@@ -836,6 +844,7 @@ function task_install_container_image {
 
   # configure packages
   chroot "$CHROOT" "$SELF_NAME" configure-locales --locales "${LOCALES:-}"
+  chroot "$CHROOT" "$SELF_NAME" configure-tzdata --time-zone "${TZ:-}"
   configure_packages
 
   # install requirements
@@ -952,6 +961,24 @@ function task_configure_locales {
 
     # interactive configuration by user
     dpkg-reconfigure locales
+
+  fi
+}
+
+function task_configure_tzdata {
+
+  # verify arguments
+  check_root_privileges
+
+  if [[ -n "${TZ:-}" ]]; then
+
+    # set preconfigured time zone
+    ln -fs "/usr/share/zoneinfo/$TZ" /etc/localtime && dpkg-reconfigure --frontend noninteractive tzdata
+
+  else
+
+    # interactive configuration by user
+    dpkg-reconfigure tzdata
 
   fi
 }
@@ -1178,7 +1205,6 @@ function configure_packages {
   cat >> "$TEMPFILE" << 'EOF'
 
 # configuration by user
-dpkg-reconfigure tzdata
 dpkg-reconfigure keyboard-configuration
 
 EOF
