@@ -1,0 +1,18 @@
+label: dos
+device: /dev/loopX
+unit: sectors
+
+# My personal approach to create (1 MiB) aligned partitions:
+# (not needed for loop devices)
+#
+# x... start of partition in GiB
+# y... size of partition in GiB
+# start, end, size... in sectors (2048 sectors * 512 Byte = 1048576 Bytes = 1 MiB)
+#
+# start = (2048*(1024*x+1))
+# end = (2048*1024*(x+y))
+# size = (2048*(1024*y-1)+1)
+#
+
+/dev/loopXp1 : start=        2048, size=    16775169, type=83, bootable
+/dev/loopXp2 : start=    16779264, size=     2095105, type=83

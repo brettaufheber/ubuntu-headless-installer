@@ -1,0 +1,33 @@
+name: CI for test actions
+
+on:
+  push:
+    branches:
+      - 'main'
+      - 'feature/**'
+      - 'hotfix/**'
+  pull_request:
+    branches:
+      - 'main'
+
+jobs:
+
+  test-host-system-install:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v2
+      - name: Install missing packages
+        run: sudo apt-get --no-install-recommends --yes install debootstrap
+      - name: Execute test
+        run: sudo ./.github/workflows/test.sh install-system ALL
+
+  test-container-image-install:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v2
+      - name: Install missing packages
+        run: sudo apt-get --no-install-recommends --yes install debootstrap
+      - name: Execute test
+        run: sudo ./.github/workflows/test.sh install-container-image ALL
