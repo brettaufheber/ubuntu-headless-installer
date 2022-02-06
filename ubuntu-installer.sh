@@ -1334,20 +1334,6 @@ apt-get -y install software-properties-common
 # install Linux kernel and GRUB bootloader
 apt-get -y install linux-generic
 
-# install microcode for Intel
-if cat /proc/cpuinfo | grep -qE '^model name\s+:\s+Intel'; then
-
-  apt-get -y install intel-microcode
-
-fi
-
-# install microcode for AMD
-if cat /proc/cpuinfo | grep -qE '^model name\s+:\s+AMD'; then
-
-  apt-get -y install amd64-microcode
-
-fi
-
 if "$USE_EFI"; then
 
   apt-get -y install grub-efi
