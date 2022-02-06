@@ -171,8 +171,14 @@ function main {
       manage-package-sources)
         task_manage_package_sources
         ;;
-      install-base)
-        task_install_base
+      install-packages-base)
+        task_install_packages_base
+        ;;
+      install-packages-system-minimal)
+        task_install_packages_system_minimal
+        ;;
+      install-packages-container-image-minimal)
+        task_install_packages_container_image_minimal
         ;;
       install-system)
         task_install_system
@@ -512,7 +518,7 @@ function task_manage_package_sources {
   apt-get update
 }
 
-function task_install_base {
+function task_install_packages_base {
 
   # verify arguments
   set_bundle_array
@@ -773,6 +779,70 @@ function task_install_base {
   fi
 }
 
+function task_install_packages_system_minimal {
+
+  # verify arguments
+  check_root_privileges
+
+  # disable interactive interfaces
+  export DEBIAN_FRONTEND=noninteractive
+
+  # update installed software
+  apt-get update
+  apt-get -y dist-upgrade
+  apt-get -y autoremove --purge
+
+  # install main packages
+  apt-get -y install ubuntu-minimal
+  apt-get -y install debootstrap
+  apt-get -y install software-properties-common
+
+  # install GRUB bootloader
+  if "$USE_EFI"; then
+
+    apt-get -y install grub-efi
+    grub-install --target=x86_64-efi --efi-directory=/boot/efi
+    echo 'The boot order must be adjusted manually using the efibootmgr tool.'
+
+  else
+
+    apt-get -y install grub-pc
+    grub-install "$DEV_BOOT"
+
+  fi
+
+  # install Linux kernel
+  apt-get -y install linux-generic
+
+  # set GRUB_CMDLINE_LINUX_DEFAULT
+  sed -ie 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="quiet noplymouth"/' /etc/default/grub
+
+  # apply grub configuration changes
+  update-grub
+}
+
+function task_install_packages_container_image_minimal {
+
+  # verify arguments
+  check_root_privileges
+
+  # disable interactive interfaces
+  export DEBIAN_FRONTEND=noninteractive
+
+  # update installed software
+  apt-get update
+  apt-get -y dist-upgrade
+  apt-get -y autoremove --purge
+
+  # install main packages
+  apt-get -y install ubuntu-minimal
+  apt-get -y install debootstrap
+  apt-get -y install software-properties-common
+
+  # install init scripts for cloud instances
+  apt-get -y install cloud-init
+}
+
 function task_install_system {
 
   # verify arguments
@@ -806,6 +876,17 @@ function task_install_system {
   # mount OS resources into chroot environment
   mounting_step_2
 
+  # install basic tools, kernel and bootloader
+  if "$USE_EFI"; then
+
+    chroot "$CHROOT" "$SELF_NAME" install-packages-system-minimal --efi
+
+  else
+
+    chroot "$CHROOT" "$SELF_NAME" install-packages-system-minimal --dev-boot "$DEV_BOOT"
+
+  fi
+
   # configure packages
   chroot "$CHROOT" "$SELF_NAME" configure-locales --locales "${LOCALES:-}"
   chroot "$CHROOT" "$SELF_NAME" configure-tzdata --time-zone "${TZ:-}"
@@ -815,14 +896,11 @@ function task_install_system {
     --keyboard-variant "${XKBVARIANT:-}" \
     --keyboard-options "${XKBOPTIONS:-}"
 
-  # install requirements, kernel and bootloader
-  install_host_requirements
-
   # manage package sources
   chroot "$CHROOT" "$SELF_NAME" manage-package-sources --mirror "$MIRROR"
 
   # install software
-  chroot "$CHROOT" "$SELF_NAME" install-base -b "${BUNDLES:-}"
+  chroot "$CHROOT" "$SELF_NAME" install-packages-base -b "${BUNDLES:-}"
 
   # do some modifications for desktop environments
   configure_desktop
@@ -886,18 +964,18 @@ function task_install_container_image {
   # mount OS resources into chroot environment
   mounting_step_2
 
+  # install basic tools
+  chroot "$CHROOT" "$SELF_NAME" install-packages-container-image-minimal
+
   # configure packages
   chroot "$CHROOT" "$SELF_NAME" configure-locales --locales "${LOCALES:-}"
   chroot "$CHROOT" "$SELF_NAME" configure-tzdata --time-zone "${TZ:-}"
-
-  # install requirements
-  install_container_requirements
 
   # manage package sources
   chroot "$CHROOT" "$SELF_NAME" manage-package-sources --mirror "$MIRROR"
 
   # install software
-  chroot "$CHROOT" "$SELF_NAME" install-base -b "${BUNDLES:-}"
+  chroot "$CHROOT" "$SELF_NAME" install-packages-base -b "${BUNDLES:-}"
 
   # do some modifications for desktop environments
   configure_desktop
@@ -1311,74 +1389,6 @@ function install_minimal_system {
   # make this script available
   cp -f "$SELF_PATH" "$CHROOT/usr/local/sbin"
   chmod a+x "$CHROOT/usr/local/sbin/$SELF_NAME"
-}
-
-function install_host_requirements {
-
-  # declare local variables
-  local TEMPFILE
-
-  # temporary file for this installation step
-  TEMPFILE="$(mktemp)"
-
-  # write installation script
-  echo '#!/bin/bash' > "$TEMPFILE"
-  echo '' >> "$TEMPFILE"
-  echo "USE_EFI=$USE_EFI" >> "$TEMPFILE"
-  cat >> "$TEMPFILE" << 'EOF'
-
-# install main packages
-apt-get -y install debootstrap
-apt-get -y install software-properties-common
-
-# install Linux kernel and GRUB bootloader
-apt-get -y install linux-generic
-
-if "$USE_EFI"; then
-
-  apt-get -y install grub-efi
-  grub-install --target=x86_64-efi --efi-directory=/boot/efi
-  echo 'The boot order must be adjusted manually using the efibootmgr tool.'
-
-fi
-
-# set GRUB_CMDLINE_LINUX_DEFAULT
-sed -ie 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="quiet noplymouth"/' /etc/default/grub
-
-# apply grub configuration changes
-update-grub
-
-EOF
-
-  # execute script
-  chroot "$CHROOT" /bin/bash "$TEMPFILE"
-  rm "$TEMPFILE"
-}
-
-function install_container_requirements {
-
-  # declare local variables
-  local TEMPFILE
-
-  # temporary file for this installation step
-  TEMPFILE="$(mktemp)"
-
-  # write installation script
-  echo '#!/bin/bash' > "$TEMPFILE"
-  cat >> "$TEMPFILE" << 'EOF'
-
-# install main packages
-apt-get -y install debootstrap
-apt-get -y install software-properties-common
-
-# install init scripts for cloud instances
-apt-get -y install cloud-init
-
-EOF
-
-  # execute script
-  chroot "$CHROOT" /bin/bash "$TEMPFILE"
-  rm "$TEMPFILE"
 }
 
 function install_default_gnome_settings {
