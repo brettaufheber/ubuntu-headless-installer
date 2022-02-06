@@ -529,7 +529,7 @@ function task_install_packages_base {
   export DEBIAN_FRONTEND=noninteractive
 
   # update installed software
-  apt-get -y dist-upgrade
+  apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade
   apt-get -y autoremove --purge
 
   # install main packages
@@ -789,7 +789,7 @@ function task_install_packages_system_minimal {
 
   # update installed software
   apt-get update
-  apt-get -y dist-upgrade
+  apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade
   apt-get -y autoremove --purge
 
   # install main packages
@@ -831,7 +831,7 @@ function task_install_packages_container_image_minimal {
 
   # update installed software
   apt-get update
-  apt-get -y dist-upgrade
+  apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade
   apt-get -y autoremove --purge
 
   # install main packages
