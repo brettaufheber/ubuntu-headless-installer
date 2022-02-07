@@ -2,6 +2,10 @@
 
 function main {
 
+  # declare local variables
+  local TASK
+  local LONG_OPTIONS
+
   # set default values and configuration
   HOME="/tmp"
   SELF_PATH="$(readlink -f "$0")"
@@ -11,10 +15,6 @@ function main {
   SHOW_HELP=false
   SHELL_LOGIN=false
   USE_EFI=false
-
-  # declare local variables
-  local TASK
-  local LONG_OPTIONS
 
   #define long options
   LONG_OPTIONS='help,login,efi'
@@ -204,7 +204,7 @@ function main {
   fi
 }
 
-function check_root_privileges {
+function verify_root_privileges {
 
   if [[ $EUID -ne 0 ]]; then
 
@@ -214,17 +214,34 @@ function check_root_privileges {
   fi
 }
 
-function check_username {
+function verify_username {
 
-  if [[ -z "${USERNAME_NEW:-}" ]] || ! echo "${USERNAME_NEW:-}" | grep -qE "$NAME_REGEX"; then
+  if [[ -n "${USERNAME_NEW:-}" ]]; then
 
-    echo "$SELF_NAME: require valid username" >&2
+    if ! echo "$USERNAME_NEW" | grep -qE "$NAME_REGEX"; then
+
+      echo "$SELF_NAME: require username that matches regular expression $NAME_REGEX" >&2
+      exit 1
+
+    fi
+
+  else
+
+    # by default, use the name of the user who runs the script
+    USERNAME_NEW="$(get_username)"
+
+  fi
+
+  # make sure the username is different to root
+  if [[ "${USERNAME_NEW:-}" == "root" ]]; then
+
+    echo "$SELF_NAME: require username different to root" >&2
     exit 1
 
   fi
 }
 
-function check_username_exists {
+function verify_username_exists {
 
   if getent passwd "${USERNAME_NEW:-}" > /dev/null; then
 
@@ -247,9 +264,19 @@ function check_username_exists {
   fi
 }
 
-function check_codename {
+function verify_hostname {
 
-  if [[ -z "${CODENAME:-}" ]] || ! echo "${CODENAME:-}" | grep -qE '^[a-z]*$'; then
+  # by default, use the hostname of the running system
+  if [[ -z "${HOSTNAME_NEW:-}" ]]; then
+
+    HOSTNAME_NEW="$HOSTNAME"
+
+  fi
+}
+
+function verify_codename {
+
+  if [[ -z "${CODENAME:-}" ]] || ! echo "${CODENAME:-}" | grep -qE '^[a-z]+$'; then
 
     echo "$SELF_NAME: require valid Ubuntu codename" >&2
     exit 1
@@ -257,7 +284,20 @@ function check_codename {
   fi
 }
 
-function check_software_bundle_names {
+function verify_package_bundles {
+
+  if [[ -z "${BUNDLES:-}" ]]; then
+
+    # by default, use an empty array for bundle entries
+    declare -a BARRAY
+
+  else
+
+    # create an array with bundle entries
+    readarray -td ',' BARRAY <<< "$BUNDLES"
+    for i in "${!BARRAY[@]}"; do BARRAY[$i]="$(echo "${BARRAY[$i]}" | tr -d '[:space:]')"; done
+
+  fi
 
   for i in "${!BARRAY[@]}"; do
 
@@ -277,15 +317,20 @@ function check_software_bundle_names {
   done
 }
 
-function check_mounting {
+function verify_mounting_root {
 
+  # the block device file for "/" must exist and be unmounted
   if [[ -z "${DEV_ROOT:-}" ]] || [[ ! -b "${DEV_ROOT:-}" ]] || mount | grep -q "${DEV_ROOT:-}"; then
 
     echo "$SELF_NAME: require unmounted device file for /" >&2
     exit 1
 
   fi
+}
 
+function verify_mounting_home {
+
+  # the block device file for "/home" must exist
   if [[ -z "${DEV_HOME:-}" ]] || [[ ! -b "${DEV_HOME:-}" ]]; then
 
     echo "$SELF_NAME: require device file for /home" >&2
@@ -294,67 +339,32 @@ function check_mounting {
   fi
 }
 
-function set_bundle_array {
-
-  # create bundle array
-  if [[ -z "${BUNDLES:-}" ]]; then
-
-    declare -a BARRAY
-
-  else
-
-    readarray -td ',' BARRAY <<< "$BUNDLES"
-    for i in "${!BARRAY[@]}"; do BARRAY[$i]="$(echo "${BARRAY[$i]}" | tr -d '[:space:]')"; done
-
-  fi
-}
-
-function set_username_default {
-
-  # use name of current user by default
-  if [[ -z "${USERNAME_NEW:-}" ]]; then
-
-    USERNAME_NEW="$(get_username)"
-
-  fi
-
-  # make sure the username is different to root
-  if [[ "${USERNAME_NEW:-}" == "root" ]]; then
-
-    echo "$SELF_NAME: require username different to root" >&2
-    exit 1
-
-  fi
-}
-
-function set_hostname_default {
-
-  # use current hostname by default
-  if [[ -z "${HOSTNAME_NEW:-}" ]]; then
-
-    HOSTNAME_NEW="$HOSTNAME"
-
-  fi
-}
-
-function set_mirror_default {
-
-  # use mirror list by default
-  if [[ -z "${MIRROR:-}" ]]; then
-
-    MIRROR='mirror://mirrors.ubuntu.com/mirrors.txt'
-
-  fi
-}
-
-function set_boot_dev_default {
+function verify_mounting_boot {
 
   if "$USE_EFI"; then
 
-    # use mounted boot partition by default
+    # use mounted UEFI partition by default
     if [[ -z "${DEV_BOOT:-}" ]]; then
 
       DEV_BOOT="$(cat /proc/mounts | grep -E /boot/efi | cut -d ' ' -f 1)"
+
+    fi
+
+    # the block device file for /boot/efi must exist
+    if [[ -z "${DEV_BOOT:-}" ]] || [[ ! -b "${DEV_BOOT:-}" ]]; then
+
+      echo "$SELF_NAME: require device file for /boot/efi" >&2
+      exit 1
+
+    fi
+
+  else
+
+    # the block device file for GRUB installation must exist
+    if [[ -z "${DEV_BOOT:-}" ]] || [[ ! -b "${DEV_BOOT:-}" ]]; then
+
+      echo "$SELF_NAME: require device file for GRUB installation" >&2
+      exit 1
 
     fi
 
@@ -367,8 +377,8 @@ function task_install_script {
   local TEMPDIR
   local BINDIR
 
-  # verify arguments
-  check_root_privileges
+  # verify preconditions
+  verify_root_privileges
 
   TEMPDIR="$(mktemp -d)"
   BINDIR='/usr/local/sbin'
@@ -387,8 +397,8 @@ function task_install_desktop_helpers {
   local TEMPDIR
   local BINDIR
 
-  # verify arguments
-  check_root_privileges
+  # verify preconditions
+  verify_root_privileges
 
   TEMPDIR="$(mktemp -d)"
   BINDIR='/usr/local/sbin'
@@ -409,10 +419,9 @@ function task_install_desktop_helpers {
 
 function task_update {
 
-  # verify arguments
-  set_bundle_array
-  check_root_privileges
-  check_software_bundle_names
+  # verify preconditions
+  verify_root_privileges
+  verify_package_bundles
 
   # update via APT package manager
   apt-get update
@@ -436,11 +445,10 @@ function task_update {
 
 function task_create_user {
 
-  # verify arguments
-  set_username_default
-  check_root_privileges
-  check_username
-  check_username_exists false
+  # verify preconditions
+  verify_root_privileges
+  verify_username
+  verify_username_exists false
 
   # create user and home-directory if not exist
   if [[ -n "${PASSWORD:-}" ]]; then
@@ -457,11 +465,10 @@ function task_create_user {
 
 function task_modify_user {
 
-  # verify arguments
-  set_username_default
-  check_root_privileges
-  check_username
-  check_username_exists true
+  # verify preconditions
+  verify_root_privileges
+  verify_username
+  verify_username_exists true
 
   # create home-directory if not exist
   mkhomedir_helper "$USERNAME_NEW"
@@ -484,13 +491,19 @@ function task_manage_package_sources {
   local SRCLIST
   local COMPONENTS
 
-  # verify arguments
-  set_mirror_default
-  check_root_privileges
+  # verify preconditions
+  verify_root_privileges
 
   # set variables
   SRCLIST='/etc/apt/sources.list.d'
   COMPONENTS='main universe multiverse restricted'
+
+  # by default, use the whole Ubuntu mirror list
+  if [[ -z "${MIRROR:-}" ]]; then
+
+    MIRROR='mirror://mirrors.ubuntu.com/mirrors.txt'
+
+  fi
 
   # set OS variables
   source /etc/os-release
@@ -520,10 +533,9 @@ function task_manage_package_sources {
 
 function task_install_packages_base {
 
-  # verify arguments
-  set_bundle_array
-  check_root_privileges
-  check_software_bundle_names
+  # verify preconditions
+  verify_root_privileges
+  verify_package_bundles
 
   # disable interactive interfaces
   export DEBIAN_FRONTEND=noninteractive
@@ -781,8 +793,9 @@ function task_install_packages_base {
 
 function task_install_packages_system_minimal {
 
-  # verify arguments
-  check_root_privileges
+  # verify preconditions
+  verify_root_privileges
+  verify_mounting_boot
 
   # disable interactive interfaces
   export DEBIAN_FRONTEND=noninteractive
@@ -823,8 +836,8 @@ function task_install_packages_system_minimal {
 
 function task_install_packages_container_image_minimal {
 
-  # verify arguments
-  check_root_privileges
+  # verify preconditions
+  verify_root_privileges
 
   # disable interactive interfaces
   export DEBIAN_FRONTEND=noninteractive
@@ -845,17 +858,15 @@ function task_install_packages_container_image_minimal {
 
 function task_install_system {
 
-  # verify arguments
-  set_bundle_array
-  set_username_default
-  set_hostname_default
-  set_mirror_default
-  set_boot_dev_default
-  check_root_privileges
-  check_username
-  check_codename
-  check_mounting
-  check_software_bundle_names
+  # verify preconditions
+  verify_root_privileges
+  verify_username
+  verify_hostname
+  verify_codename
+  verify_package_bundles
+  verify_mounting_root
+  verify_mounting_home
+  verify_mounting_boot
 
   # format $DEV_ROOT
   mkfs.ext4 "$DEV_ROOT"
@@ -897,10 +908,10 @@ function task_install_system {
     --keyboard-options "${XKBOPTIONS:-}"
 
   # manage package sources
-  chroot "$CHROOT" "$SELF_NAME" manage-package-sources --mirror "$MIRROR"
+  chroot "$CHROOT" "$SELF_NAME" manage-package-sources --mirror "${MIRROR:-}"
 
   # install software
-  chroot "$CHROOT" "$SELF_NAME" install-packages-base -b "${BUNDLES:-}"
+  chroot "$CHROOT" "$SELF_NAME" install-packages-base --bundles "${BUNDLES:-}"
 
   # do some modifications for desktop environments
   configure_desktop
@@ -937,13 +948,10 @@ function task_install_container_image {
   local IMAGE_RELEASE
   local IMAGE_NAME
 
-  # verify arguments
-  set_bundle_array
-  set_username_default
-  set_mirror_default
-  check_root_privileges
-  check_codename
-  check_software_bundle_names
+  # verify preconditions
+  verify_root_privileges
+  verify_codename
+  verify_package_bundles
 
   # create temporary directory
   TEMPDIR="$(mktemp -d)"
@@ -972,10 +980,10 @@ function task_install_container_image {
   chroot "$CHROOT" "$SELF_NAME" configure-tzdata --time-zone "${TZ:-}"
 
   # manage package sources
-  chroot "$CHROOT" "$SELF_NAME" manage-package-sources --mirror "$MIRROR"
+  chroot "$CHROOT" "$SELF_NAME" manage-package-sources --mirror "${MIRROR:-}"
 
   # install software
-  chroot "$CHROOT" "$SELF_NAME" install-packages-base -b "${BUNDLES:-}"
+  chroot "$CHROOT" "$SELF_NAME" install-packages-base --bundles "${BUNDLES:-}"
 
   # do some modifications for desktop environments
   configure_desktop
@@ -1040,8 +1048,8 @@ function task_configure_locales {
   local LOCALES_LIST
   local PRIMARY_LOCAL
 
-  # verify arguments
-  check_root_privileges
+  # verify preconditions
+  verify_root_privileges
 
   if [[ -n "${LOCALES:-}" ]]; then
 
@@ -1088,8 +1096,8 @@ function task_configure_locales {
 
 function task_configure_tzdata {
 
-  # verify arguments
-  check_root_privileges
+  # verify preconditions
+  verify_root_privileges
 
   if [[ -n "${TZ:-}" ]]; then
 
@@ -1109,10 +1117,10 @@ function task_configure_keyboard {
   # declare local variables
   local FILE
 
-  # verify arguments
-  check_root_privileges
+  # verify preconditions
+  verify_root_privileges
 
-  # set path /etc/default/keyboard
+  # set path for output file
   FILE="/etc/default/keyboard"
 
   if [[ -n "${XKBMODEL:-}" ]]; then
@@ -1200,21 +1208,27 @@ function configure_fstab {
   local UUID_HOME
   local UUID_UEFI
 
-  # set path /etc/fstab
+  # set path for output file
   FILE="$CHROOT/etc/fstab"
 
-  # get UUID of each partition
+  # get UUID of system and home partition
   UUID_ROOT="$(blkid -s UUID -o value "$DEV_ROOT")"
   UUID_HOME="$(blkid -s UUID -o value "$DEV_HOME")"
 
   if "$USE_EFI"; then
 
+    # get UUID of UEFI partition
     UUID_UEFI="$(blkid -s UUID -o value "$DEV_BOOT")"
+
+    # allows to write UEFI specific entry to fstab file
     FILE_UEFI="$FILE"
 
   else
 
+    # an UUID is not needed in this case
     UUID_UEFI=""
+
+    # discard UEFI specific entry
     FILE_UEFI="/dev/null"
 
   fi
@@ -1237,7 +1251,7 @@ function configure_tools {
   local FILE_BASHRC
   local COMPLETION_SCRIPT
 
-  # set paths
+  # set paths for output files
   FILE_VIMRC="$CHROOT/etc/vim/vimrc"
   FILE_BASHRC="$CHROOT/etc/bash.bashrc"
 
@@ -1282,7 +1296,7 @@ function configure_users {
   # declare local variables
   local FILE
 
-  # set path /etc/adduser.conf
+  # set path for output file
   FILE="$CHROOT/etc/adduser.conf"
 
   # edit /etc/adduser.conf
