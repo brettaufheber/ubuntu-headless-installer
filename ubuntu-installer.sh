@@ -988,7 +988,7 @@ function task_install_container_image {
 
   # define image name
   IMAGE_RELEASE="$(cat '/proc/sys/kernel/random/uuid' | tr -dc '[:alnum:]')"
-  IMAGE_NAME="ubuntu-$CODENAME-$IMAGE_RELEASE"
+  IMAGE_NAME="custom-ubuntu/$CODENAME-$IMAGE_RELEASE"
 
   # create metadata file
   {
