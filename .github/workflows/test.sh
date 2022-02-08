@@ -2,7 +2,6 @@
 
 function main {
 
-  local TASK
   local CODENAME
 
   source "./.github/workflows/test.env"
@@ -21,49 +20,54 @@ function main {
   CODENAME="$2"
   IMAGE="./tmp/test.img"
 
-  mkdir -p "./tmp"
-  dd "if=/dev/zero" "of=$IMAGE" bs=1G count=10
-  sfdisk "$IMAGE" < "./.github/workflows/test.sfdisk.txt"
+  run_test_suite "$CODENAME"
+}
 
-  DEV_LOOP_IMAGE="$(losetup --show --find --partscan "$IMAGE")"
-  DEV_LOOP_SYSTEM="$DEV_LOOP_IMAGE""p1"
-  DEV_LOOP_HOME="$DEV_LOOP_IMAGE""p2"
+function run_test_suite {
+
+  local CODENAME
+
+  CODENAME="$1"
+
+  before_all
 
   if [[ "$CODENAME" == "ALL" ]]; then
 
     for i in $(get_codenames); do
 
-      install "$TASK" "$i"
+      before_each
+      execute_installer "$i"
+      after_each
 
     done
 
   else
 
-    install "$TASK" "$CODENAME"
+    before_each
+    execute_installer "$CODENAME"
+    after_each
 
   fi
+
+  after_all
 }
 
-function install {
+function execute_installer {
 
-  local TASK
   local CODENAME
 
-  TASK="$1"
-  CODENAME="$2"
+  CODENAME="$1"
 
   echo "$SELF_NAME: installation with codename $CODENAME"
-
-  mkfs.ext4 "$DEV_LOOP_HOME"
 
   ./ubuntu-installer.sh "$TASK" \
     --username "$TEST_USERNAME" \
     --hostname "$TEST_HOSTNAME" \
     --codename "$CODENAME" \
     --bundles "$TEST_BUNDLES" \
-    --dev-root "$DEV_LOOP_SYSTEM" \
-    --dev-home "$DEV_LOOP_HOME" \
-    --dev-boot "$DEV_LOOP_IMAGE" \
+    --dev-root "${DEV_LOOP_SYSTEM:-}" \
+    --dev-home "${DEV_LOOP_HOME:-}" \
+    --dev-boot "${DEV_LOOP_IMAGE:-}" \
     --mirror "$TEST_MIRROR" \
     --locales "$TEST_LOCALES" \
     --time-zone "$TEST_TZ" \
@@ -87,15 +91,50 @@ function get_codenames {
     cut -d ' ' -f 1
 }
 
-function cleanup {
+function before_each {
 
-  [[ -n "${DEV_LOOP_IMAGE:-}" ]] && losetup -d "$DEV_LOOP_IMAGE"
-  [[ -f "$IMAGE" ]] && rm "$IMAGE"
+  if [[ "$TASK" == "install-system" ]]; then
+
+    mkfs.ext4 "$DEV_LOOP_HOME"
+
+  fi
+
+  echo "$SELF_NAME: begin installation (task: $TASK)"
+}
+
+function after_each {
+
+  echo "$SELF_NAME: end installation (task: $TASK)"
+}
+
+function before_all {
+
+  if [[ "$TASK" == "install-system" ]]; then
+
+    mkdir -p "$(dirname "$IMAGE")"
+    dd "if=/dev/zero" "of=$IMAGE" bs=1G count=10
+    sfdisk "$IMAGE" < "./.github/workflows/test.sfdisk.txt"
+
+    DEV_LOOP_IMAGE="$(losetup --show --find --partscan "$IMAGE")"
+    DEV_LOOP_SYSTEM="$DEV_LOOP_IMAGE""p1"
+    DEV_LOOP_HOME="$DEV_LOOP_IMAGE""p2"
+
+  fi
+}
+
+function after_all {
+
+  if [[ "$TASK" == "install-system" ]]; then
+
+    [[ -n "${DEV_LOOP_IMAGE:-}" ]] && losetup -d "$DEV_LOOP_IMAGE"
+    [[ -f "$IMAGE" ]] && rm "$IMAGE"
+
+  fi
 }
 
 function error_trap {
 
-  cleanup
+  after_all
 
   echo "$SELF_NAME: script stopped caused by unexpected return code $1 at line $2" >&2
   exit 3
@@ -103,7 +142,7 @@ function error_trap {
 
 function interrupt_trap {
 
-  cleanup
+  after_all
 
   echo "$SELF_NAME: script interrupted by signal" >&2
   exit 2
