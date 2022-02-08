@@ -195,6 +195,9 @@ function main {
       configure-keyboard)
         task_configure_keyboard
         ;;
+      configure-tools)
+        task_configure_tools
+        ;;
       *)
         echo "$SELF_NAME: require a valid task" >&2
         exit 1
@@ -880,7 +883,6 @@ function task_install_system {
   # configuration before starting chroot
   configure_hosts
   configure_fstab
-  configure_tools
   configure_users
   configure_network
 
@@ -906,6 +908,7 @@ function task_install_system {
     --keyboard-layout "${XKBLAYOUT:-}" \
     --keyboard-variant "${XKBVARIANT:-}" \
     --keyboard-options "${XKBOPTIONS:-}"
+  chroot "$CHROOT" "$SELF_NAME" configure-tools
 
   # manage package sources
   chroot "$CHROOT" "$SELF_NAME" manage-package-sources --mirror "${MIRROR:-}"
@@ -966,7 +969,6 @@ function task_install_container_image {
   install_minimal_system
 
   # configuration before starting chroot
-  configure_tools
   configure_users
 
   # mount OS resources into chroot environment
@@ -978,6 +980,7 @@ function task_install_container_image {
   # configure packages
   chroot "$CHROOT" "$SELF_NAME" configure-locales --locales "${LOCALES:-}"
   chroot "$CHROOT" "$SELF_NAME" configure-tzdata --time-zone "${TZ:-}"
+  chroot "$CHROOT" "$SELF_NAME" configure-tools
 
   # manage package sources
   chroot "$CHROOT" "$SELF_NAME" manage-package-sources --mirror "${MIRROR:-}"
@@ -1163,6 +1166,56 @@ function task_configure_keyboard {
   fi
 }
 
+function task_configure_tools {
+
+  # declare local variables
+  local FILE_VIMRC
+  local FILE_BASHRC
+  local COMPLETION_SCRIPT
+
+  # verify preconditions
+  verify_root_privileges
+
+  # set paths for output files
+  FILE_VIMRC="/etc/vim/vimrc"
+  FILE_BASHRC="/etc/bash.bashrc"
+
+  # add vim settings
+  cat >> "$FILE_VIMRC" << 'EOF'
+
+filetype plugin indent on
+syntax on
+set nocp
+set background=light
+set tabstop=4
+set shiftwidth=4
+set expandtab
+
+EOF
+
+  # enable bash history search completion
+  cat >> "$FILE_BASHRC" << 'EOF'
+
+# enable bash history search completion
+if [[ $- == *i* ]]; then
+
+  bind '"\e[A": history-search-backward'
+  bind '"\e[B": history-search-forward'
+fi
+
+EOF
+
+  # get code for bash completion
+  COMPLETION_SCRIPT="$(cat "$FILE_BASHRC" |
+    sed -n '/# enable bash completion in interactive shells/,/^$/p' |
+    sed '1,1d; $d' |
+    cut -c 2-)"
+
+  # enable bash completion
+  echo "" >> "$FILE_BASHRC"
+  echo "$COMPLETION_SCRIPT" >> "$FILE_BASHRC"
+}
+
 function configure_hosts {
 
   # configure hosts with default arguments
@@ -1242,53 +1295,6 @@ function configure_fstab {
   echo "proc                /proc             proc       defaults                         0      0" >> "$FILE"
   echo "sys                 /sys              sysfs      defaults                         0      0" >> "$FILE"
   echo "tmpfs               /tmp              tmpfs      defaults,size=40%                0      0" >> "$FILE"
-}
-
-function configure_tools {
-
-  # declare local variables
-  local FILE_VIMRC
-  local FILE_BASHRC
-  local COMPLETION_SCRIPT
-
-  # set paths for output files
-  FILE_VIMRC="$CHROOT/etc/vim/vimrc"
-  FILE_BASHRC="$CHROOT/etc/bash.bashrc"
-
-  # add vim settings
-  cat >> "$FILE_VIMRC" << 'EOF'
-
-filetype plugin indent on
-syntax on
-set nocp
-set background=light
-set tabstop=4
-set shiftwidth=4
-set expandtab
-
-EOF
-
-  # enable bash history search completion
-  cat >> "$FILE_BASHRC" << 'EOF'
-
-# enable bash history search completion
-if [[ $- == *i* ]]; then
-
-  bind '"\e[A": history-search-backward'
-  bind '"\e[B": history-search-forward'
-fi
-
-EOF
-
-  # get code for bash completion
-  COMPLETION_SCRIPT="$(cat "$FILE_BASHRC" |
-    sed -n '/# enable bash completion in interactive shells/,/^$/p' |
-    sed '1,1d; $d' |
-    cut -c 2-)"
-
-  # enable bash completion
-  echo "" >> "$FILE_BASHRC"
-  echo "$COMPLETION_SCRIPT" >> "$FILE_BASHRC"
 }
 
 function configure_users {
