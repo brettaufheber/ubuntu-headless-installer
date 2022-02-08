@@ -183,8 +183,11 @@ function main {
       install-system)
         task_install_system
         ;;
-      install-container-image)
-        task_install_container_image
+      install-lxc-image)
+        task_install_lxc_image
+        ;;
+      install-docker-image)
+        task_install_docker_image
         ;;
       configure-locales)
         task_configure_locales
@@ -944,7 +947,7 @@ function task_install_system {
   echo "$SELF_NAME: done."
 }
 
-function task_install_container_image {
+function task_install_lxc_image {
 
   # declare local variables
   local TEMPDIR
@@ -1042,7 +1045,74 @@ function task_install_container_image {
   rm -rf "$TEMPDIR"
 
   # show that we are done here
-  echo "$SELF_NAME: image $IMAGE_NAME imported"
+  echo "$SELF_NAME: LXC image $IMAGE_NAME imported"
+}
+
+function task_install_docker_image {
+
+  # declare local variables
+  local TEMPDIR
+
+  # verify preconditions
+  verify_root_privileges
+  verify_codename
+  verify_package_bundles
+
+  # create temporary directory
+  TEMPDIR="$(mktemp -d)"
+
+  # define image name
+  IMAGE_RELEASE="$(cat '/proc/sys/kernel/random/uuid' | tr -dc '[:alnum:]')"
+  IMAGE_NAME="custom/ubuntu:$CODENAME-$IMAGE_RELEASE"
+
+  # create Dockerfile
+  cat >> "$TEMPDIR/Dockerfile" << 'EOF'
+
+ARG CODENAME
+
+FROM ubuntu:${CODENAME}
+
+ARG INSTALLER
+ARG BUNDLES
+ARG MIRROR
+ARG LOCALES
+ARG TZ
+
+ADD ${INSTALLER} /usr/local/sbin/${INSTALLER}
+RUN chmod a+x /usr/local/sbin/${INSTALLER}
+
+RUN \
+    ${INSTALLER} install-packages-container-image-minimal && \
+    ${INSTALLER} configure-locales && \
+    ${INSTALLER} configure-tzdata && \
+    ${INSTALLER} configure-tools && \
+    ${INSTALLER} manage-package-sources && \
+    ${INSTALLER} install-packages-base && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+EOF
+
+  # copy script to temporary directory
+  cp "$SELF_PATH" "$TEMPDIR/"
+
+  # build docker image
+  docker build \
+    --no-cache \
+    --tag "$IMAGE_NAME" \
+    --build-arg INSTALLER="$SELF_NAME" \
+    --build-arg CODENAME="$CODENAME" \
+    --build-arg BUNDLES="${BUNDLES:-}" \
+    --build-arg MIRROR="${MIRROR:-}" \
+    --build-arg LOCALES="${LOCALES:-}" \
+    --build-arg TZ="${TZ:-}" \
+    "$TEMPDIR"
+
+  # remove temporary directory
+  rm -rf "$TEMPDIR"
+
+  # show that we are done here
+  echo "$SELF_NAME: Docker image $IMAGE_NAME created"
 }
 
 function task_configure_locales {
