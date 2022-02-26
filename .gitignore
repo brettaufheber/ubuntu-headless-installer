@@ -1,7 +1,12 @@
+########################
+# General
+#
+
 *.class
 *.bin
 *.log
 *.pid
+*.seed
 *.lock
 *.swp
 *~
@@ -14,7 +19,47 @@ Thumbs.db
 /temp/
 /tmp/
 
+hs_err_pid*
+
+########################
+# Build tool / IDE
+#
+
 *.iws
+*.iml
+
 .idea/
 .idea_modules/
 .vscode/
+.bsp/
+.lib/
+.settings/
+
+dist/
+build/
+out/
+target/
+node_modules/
+
+project/boot/
+project/project/
+project/target/
+
+########################
+# Binary objects
+#
+
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.7z
+*.bz2
+*.gz
+*.tgz
+*.tar
+*.rar
+*.iso
+
+########################
