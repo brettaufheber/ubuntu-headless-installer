@@ -610,6 +610,7 @@ function task_install_packages_base {
     apt-get -y install traceroute
     apt-get -y install tcptraceroute
     apt-get -y install whois
+    apt-get -y install ldap-utils
 
   fi
 
