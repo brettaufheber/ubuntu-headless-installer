@@ -835,7 +835,7 @@ function task_install_packages_system_minimal {
   apt-get -y install linux-generic
 
   # set GRUB_CMDLINE_LINUX_DEFAULT
-  sed -ie 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="quiet noplymouth"/' /etc/default/grub
+  sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="quiet noplymouth"/' /etc/default/grub
 
   # apply grub configuration changes
   update-grub
@@ -1199,25 +1199,25 @@ function task_configure_keyboard {
 
   if [[ -n "${XKBMODEL:-}" ]]; then
 
-    sed -ie 's/^XKBMODEL=.*/XKBMODEL="'"$XKBMODEL"'"/' "$FILE"
+    sed -i 's/^XKBMODEL=.*/XKBMODEL="'"$XKBMODEL"'"/' "$FILE"
 
   fi
 
   if [[ -n "${XKBLAYOUT:-}" ]]; then
 
-    sed -ie 's/^XKBLAYOUT=.*/XKBLAYOUT="'"$XKBLAYOUT"'"/' "$FILE"
+    sed -i 's/^XKBLAYOUT=.*/XKBLAYOUT="'"$XKBLAYOUT"'"/' "$FILE"
 
   fi
 
   if [[ -n "${XKBVARIANT:-}" ]]; then
 
-    sed -ie 's/^XKBVARIANT=.*/XKBVARIANT="'"$XKBVARIANT"'"/' "$FILE"
+    sed -i 's/^XKBVARIANT=.*/XKBVARIANT="'"$XKBVARIANT"'"/' "$FILE"
 
   fi
 
   if [[ -n "${XKBOPTIONS:-}" ]]; then
 
-    sed -ie 's/^XKBOPTIONS=.*/XKBOPTIONS="'"$XKBOPTIONS"'"/' "$FILE"
+    sed -i 's/^XKBOPTIONS=.*/XKBOPTIONS="'"$XKBOPTIONS"'"/' "$FILE"
 
   fi
 
@@ -1377,8 +1377,8 @@ function configure_users {
   FILE="$CHROOT/etc/adduser.conf"
 
   # edit /etc/adduser.conf
-  sed -ie 's/^#EXTRA_GROUPS=.*/EXTRA_GROUPS="'"$EXTRA_GROUPS"'"/' "$FILE"
-  sed -ie 's/^#NAME_REGEX=.*/NAME_REGEX="'"$NAME_REGEX"'"/' "$FILE"
+  sed -i 's/^#EXTRA_GROUPS=.*/EXTRA_GROUPS="'"$EXTRA_GROUPS"'"/' "$FILE"
+  sed -i 's/^#NAME_REGEX=.*/NAME_REGEX="'"$NAME_REGEX"'"/' "$FILE"
 }
 
 function configure_network {
@@ -1627,7 +1627,7 @@ function get_username {
 
   while [[ "$CURRENT_USER" == "root" && $CURRENT_PID -gt 0 ]]; do
 
-    RESULT="$(ps -hp $CURRENT_PID -o user,ppid | sed -e 's/\s\s*/ /')"
+    RESULT="$(ps -hp $CURRENT_PID -o user,ppid | sed 's/\s\s*/ /')"
     CURRENT_USER="$(echo "$RESULT" | cut -d ' ' -f 1)"
     CURRENT_PID="$(echo "$RESULT" | cut -d ' ' -f 2)"
 
