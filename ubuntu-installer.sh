@@ -631,7 +631,7 @@ function task_install_packages_base {
     apt-get -y install clang lldb lld llvm
     apt-get -y install cmake
     apt-get -y install libboost-all-dev
-    apt-get -y install qt5-default qttools5-dev-tools qttools5-dev
+    apt-get -y install qtbase5-dev qtbase5-dev-tools qttools5-dev qttools5-dev-tools qtchooser qt5-qmake
     apt-get -y install libgtkmm-3.0-dev libgtkmm-2.4-dev
 
     # install support for Ada
