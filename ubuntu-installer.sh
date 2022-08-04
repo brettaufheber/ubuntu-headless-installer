@@ -515,10 +515,10 @@ function task_manage_package_sources {
   source /etc/os-release
 
   # add package sources
-  add-apt-repository -s "deb $MIRROR $UBUNTU_CODENAME $COMPONENTS"
-  add-apt-repository -s "deb $MIRROR $UBUNTU_CODENAME-updates $COMPONENTS"
-  add-apt-repository -s "deb $MIRROR $UBUNTU_CODENAME-security $COMPONENTS"
-  add-apt-repository -s "deb $MIRROR $UBUNTU_CODENAME-backports $COMPONENTS"
+  add-apt-repository -y -s "deb $MIRROR $UBUNTU_CODENAME $COMPONENTS"
+  add-apt-repository -y -s "deb $MIRROR $UBUNTU_CODENAME-updates $COMPONENTS"
+  add-apt-repository -y -s "deb $MIRROR $UBUNTU_CODENAME-security $COMPONENTS"
+  add-apt-repository -y -s "deb $MIRROR $UBUNTU_CODENAME-backports $COMPONENTS"
 
   # add package sources for sbt
   ## uid: sbt build tool <scalasbt@gmail.com>
