@@ -642,7 +642,7 @@ function task_install_packages_base {
 
     # install support for Perl
     apt-get -y install perl
-    apt-get -y install libgtk3-perl libgtk2-perl
+    apt-get -y install libgtk3-perl
 
     # install support for PHP
     apt-get -y install php-cli php-fpm
