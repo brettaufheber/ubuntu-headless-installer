@@ -733,7 +733,6 @@ function task_install_packages_base {
     # install scanner and printer support
     apt-get -y install gscan2pdf
     apt-get -y install cups cups-client cups-bsd
-    apt-get -y install system-config-printer-gnome
 
     # install font files
     apt-get -y install fonts-open-sans
