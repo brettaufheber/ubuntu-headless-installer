@@ -495,6 +495,7 @@ function task_manage_package_sources {
 
   # declare local variables
   local SRCLIST
+  local PREFERENCES
   local COMPONENTS
 
   # verify preconditions
@@ -502,6 +503,7 @@ function task_manage_package_sources {
 
   # set variables
   SRCLIST='/etc/apt/sources.list.d'
+  PREFERENCES='/etc/apt/preferences.d'
   COMPONENTS='main universe multiverse restricted'
 
   # by default, use the whole Ubuntu mirror list
@@ -532,6 +534,12 @@ function task_manage_package_sources {
   wget -qO - 'https://dl-ssl.google.com/linux/linux_signing_key.pub' \
     | apt-key add -
   echo 'deb https://dl.google.com/linux/chrome/deb/ stable main' > "$SRCLIST/google-chrome.list"
+
+  # add package sources for firefox
+  add-apt-repository -y ppa:mozillateam/ppa
+  echo 'Package: *' > "$PREFERENCES/mozilla-firefox"
+  echo 'Pin: release o=LP-PPA-mozillateam' >> "$PREFERENCES/mozilla-firefox"
+  echo 'Pin-Priority: 601' >> "$PREFERENCES/mozilla-firefox"
 
   # update package lists
   apt-get update
