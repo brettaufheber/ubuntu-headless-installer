@@ -731,7 +731,7 @@ function task_install_packages_base {
     apt-get -y install network-manager-strongswan
 
     # install scanner and printer support
-    apt-get -y install simple-scan
+    apt-get -y install gscan2pdf
     apt-get -y install cups cups-client cups-bsd
     apt-get -y install system-config-printer-gnome
 
