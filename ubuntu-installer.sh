@@ -718,7 +718,7 @@ function task_install_packages_base {
     apt-get -y install gnome-software-plugin-flatpak flatpak
     apt-get -y install language-selector-gnome
     apt-get -y install ubuntu-restricted-extras
-    apt-get -y install materia-gtk-theme dmz-cursor-theme
+    apt-get -y install materia-gtk-theme elementary-icon-theme dmz-cursor-theme
     apt-get -y install dconf-cli dconf-editor
     apt-get -y install gedit ghex
 
@@ -1529,6 +1529,9 @@ enabled-extensions=['user-theme@gnome-shell-extensions.gcampax.github.com']
 
 [org/gnome/desktop/interface]
 cursor-theme='DMZ-Black'
+
+[org/gnome/desktop/interface]
+icon-theme='elementary'
 
 [org/gnome/desktop/interface]
 gtk-theme='Materia-light-compact'
