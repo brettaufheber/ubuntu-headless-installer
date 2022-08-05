@@ -526,7 +526,7 @@ function task_manage_package_sources {
   wget -qO - 'https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x99E82A75642AC823' \
     | sed -n '/-----BEGIN PGP PUBLIC KEY BLOCK-----/,/-----END PGP PUBLIC KEY BLOCK-----/p' \
     | apt-key add -
-  echo 'deb https://dl.bintray.com/sbt/debian /' > "$SRCLIST/sbt.list"
+  echo 'deb https://repo.scala-sbt.org/scalasbt/debian all main' > "$SRCLIST/sbt.list"
 
   # add package sources for chrome browser
   wget -qO - 'https://dl-ssl.google.com/linux/linux_signing_key.pub' \
