@@ -1538,7 +1538,7 @@ icon-theme='elementary'
 gtk-theme='Materia-light-compact'
 
 [org/gnome/shell/extensions/user-theme]
-name='Materia-dark'
+name='Materia-light'
 
 # power saving options
 
