@@ -719,6 +719,7 @@ function task_install_packages_base {
     apt-get -y install language-selector-gnome
     apt-get -y install ubuntu-restricted-extras
     apt-get -y install materia-gtk-theme elementary-icon-theme dmz-cursor-theme
+    apt-get -y install gnome-tweaks
     apt-get -y install dconf-cli dconf-editor
     apt-get -y install gedit ghex
 
