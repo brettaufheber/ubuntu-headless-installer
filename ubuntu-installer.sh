@@ -494,7 +494,8 @@ function task_modify_user {
 function task_manage_package_sources {
 
   # declare local variables
-  local SRCLIST
+  local TRUSTED_GPG
+  local SOURCES_LIST
   local PREFERENCES
   local COMPONENTS
 
@@ -502,7 +503,8 @@ function task_manage_package_sources {
   verify_root_privileges
 
   # set variables
-  SRCLIST='/etc/apt/sources.list.d'
+  TRUSTED_GPG='/etc/apt/trusted.gpg.d'
+  SOURCES_LIST='/etc/apt/sources.list.d'
   PREFERENCES='/etc/apt/preferences.d'
   COMPONENTS='main universe multiverse restricted'
 
@@ -523,17 +525,16 @@ function task_manage_package_sources {
   add-apt-repository -y -s "deb $MIRROR $UBUNTU_CODENAME-backports $COMPONENTS"
 
   # add package sources for sbt
-  ## uid: sbt build tool <scalasbt@gmail.com>
-  ## fingerprint: 2EE0EA64E40A89B84B2DF73499E82A75642AC823
-  wget -qO - 'https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x99E82A75642AC823' \
-    | sed -n '/-----BEGIN PGP PUBLIC KEY BLOCK-----/,/-----END PGP PUBLIC KEY BLOCK-----/p' \
-    | apt-key add -
-  echo 'deb https://repo.scala-sbt.org/scalasbt/debian all main' > "$SRCLIST/sbt.list"
+  wget -qO - 'https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x2EE0EA64E40A89B84B2DF73499E82A75642AC823' \
+    | gpg --no-default-keyring --keyring "gnupg-ring:$TRUSTED_GPG/scalasbt-release.gpg" --import
+  chmod 644 "$TRUSTED_GPG/scalasbt-release.gpg"
+  echo 'deb https://repo.scala-sbt.org/scalasbt/debian all main' > "$SOURCES_LIST/sbt.list"
 
   # add package sources for chrome browser
   wget -qO - 'https://dl-ssl.google.com/linux/linux_signing_key.pub' \
-    | apt-key add -
-  echo 'deb https://dl.google.com/linux/chrome/deb/ stable main' > "$SRCLIST/google-chrome.list"
+    | gpg --no-default-keyring --keyring "gnupg-ring:$TRUSTED_GPG/google-chrome.gpg" --import
+  chmod 644 "$TRUSTED_GPG/google-chrome.gpg"
+  echo 'deb https://dl.google.com/linux/chrome/deb/ stable main' > "$SOURCES_LIST/google-chrome.list"
 
   # add package sources for firefox
   add-apt-repository -y ppa:mozillateam/ppa
