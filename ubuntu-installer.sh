@@ -312,10 +312,9 @@ function verify_package_bundles {
         [[ ${BARRAY[$i]} != 'dev' ]] &&
         [[ ${BARRAY[$i]} != 'desktop' ]] &&
         [[ ${BARRAY[$i]} != 'laptop' ]] &&
-        [[ ${BARRAY[$i]} != 'web' ]] &&
         [[ ${BARRAY[$i]} != 'x86' ]]; then
 
-      echo "$SELF_NAME: require valid bundle names [net, virt, dev, desktop, laptop, web, x86]" >&2
+      echo "$SELF_NAME: require valid bundle names [net, virt, dev, desktop, laptop, x86]" >&2
       exit 1
 
     fi
@@ -792,17 +791,6 @@ function task_install_packages_base {
 
     # install advanced power management
     apt-get -y install tlp tlp-rdw
-
-  fi
-
-  # web server and web proxy
-  if [[ ${BARRAY[*]} =~ 'web' ]]; then
-
-    # install web server
-    apt-get -y install nginx
-
-    # install high availability TCP/HTTP load balancer
-    apt-get -y install haproxy
 
   fi
 }
