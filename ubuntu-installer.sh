@@ -11,7 +11,7 @@ function main {
   SELF_PATH="$(readlink -f "$0")"
   SELF_NAME="$(basename "$SELF_PATH")"
   NAME_REGEX='^[a-z][-a-z0-9]*$'
-  EXTRA_GROUPS='adm audio cdrom dialout dip floppy libvirt lpadmin plugdev scanner sudo users video wireshark'
+  EXTRA_GROUPS='adm audio cdrom dialout dip docker floppy libvirt lpadmin plugdev scanner sudo users video wireshark'
   SHOW_HELP=false
   SHELL_LOGIN=false
   USE_EFI=false
