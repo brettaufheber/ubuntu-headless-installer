@@ -619,6 +619,7 @@ function task_install_packages_base {
     apt-get -y install tcptraceroute
     apt-get -y install whois
     apt-get -y install ldap-utils
+    apt-get -y install postgresql-client
 
   fi
 
