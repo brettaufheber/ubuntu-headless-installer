@@ -1640,6 +1640,15 @@ function get_username {
   getent passwd "$CURRENT_USER" | cut -d ':' -f 1
 }
 
+function stop_chroot_processes {
+
+  for x in /proc/*/root; do
+    if [[ "$(readlink $x)" =~ ^$CHROOT ]]; then
+      kill -s TERM "$(basename "$(dirname "$x")")"
+    fi
+  done
+}
+
 function mounting_step_1 {
 
   # declare local variables
@@ -1676,6 +1685,10 @@ function unmounting_step_1 {
 
   # check whether the step is required or not
   if [[ $(($CLEANUP_MASK & 1)) -ne 0 ]]; then
+
+    # prepare unmount
+    stop_chroot_processes
+    sync
 
     # unmount home directory and directory root
     umount "$CHHOME"
@@ -1729,7 +1742,8 @@ function unmounting_step_2 {
   # check whether the step is required or not
   if [[ $(($CLEANUP_MASK & 2)) -ne 0 ]]; then
 
-    # flush the cache
+    # prepare unmount
+    stop_chroot_processes
     sync
 
     # unmount resources
