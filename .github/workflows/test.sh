@@ -33,7 +33,7 @@ function run_test_suite {
 
   if [[ "$CODENAME" == "ALL" ]]; then
 
-    for i in $(get_codenames); do
+    for i in $(get_codenames "$TEST_LAST_VERSIONS_COUNT"); do
 
       before_each
       execute_installer "$i"
@@ -81,13 +81,17 @@ function execute_installer {
 
 function get_codenames {
 
+  local LAST_VERSIONS_COUNT
+
+  LAST_VERSIONS_COUNT="$1"
+
   wget -qO - 'http://archive.ubuntu.com/ubuntu/dists/' |
     sed 's/<[^>]*>/ /g' |
     grep -E '^\s*[a-z]+/' |
     sed -n -e 's/^[[:space:]]*\([a-z]\+\)\/[[:space:]]\+\([0-9]\+\).*$/\1 \2/p' |
     grep -vE '^devel\s' |
     sort -nrk 2 |
-    head -5 |
+    head -"$LAST_VERSIONS_COUNT" |
     cut -d ' ' -f 1
 }
 
