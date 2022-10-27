@@ -4,10 +4,12 @@ function main {
 
   local CODENAME
 
-  source "./.github/workflows/test.env"
-
   SELF_PATH="$(readlink -f "$0")"
   SELF_NAME="$(basename "$SELF_PATH")"
+  SELF_DIR="$(dirname "$SELF_PATH")"
+
+  # load test variables
+  source "$SELF_DIR/test.env"
 
   if [[ $# -ne 2 ]]; then
 
@@ -117,7 +119,7 @@ function before_all {
 
     mkdir -p "$(dirname "$IMAGE")"
     dd "if=/dev/zero" "of=$IMAGE" bs=1G count=10
-    sfdisk "$IMAGE" < "./.github/workflows/test.sfdisk.txt"
+    sfdisk "$IMAGE" < "$SELF_DIR/sfdisk.txt"
 
     DEV_LOOP_IMAGE="$(losetup --show --find --partscan "$IMAGE")"
     DEV_LOOP_SYSTEM="$DEV_LOOP_IMAGE""p1"

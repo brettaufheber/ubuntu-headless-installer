@@ -20,7 +20,7 @@ jobs:
       - name: Install missing packages
         run: sudo apt-get --no-install-recommends --yes install debootstrap
       - name: Execute test
-        run: sudo ./.github/workflows/test.sh install-system ALL
+        run: sudo ./test/test.sh install-system ALL
 
   test-lxc-image-install:
     runs-on: ubuntu-latest
@@ -30,7 +30,7 @@ jobs:
       - name: Install missing packages
         run: sudo apt-get --no-install-recommends --yes install debootstrap
       - name: Execute test
-        run: sudo ./.github/workflows/test.sh install-lxc-image ALL
+        run: sudo ./test/test.sh install-lxc-image ALL
 
   test-docker-image-install:
     runs-on: ubuntu-latest
@@ -38,4 +38,4 @@ jobs:
       - name: Checkout project
         uses: actions/checkout@v2
       - name: Execute test
-        run: sudo ./.github/workflows/test.sh install-docker-image ALL
+        run: sudo ./test/test.sh install-docker-image ALL
