@@ -1,12 +1,56 @@
 = Ubuntu Installer
 
-A single Bash script that can be used to easily install Ubuntu from command line.
+Introducing the ultimate lightweight tool for installing Ubuntu Linux from the command line: A single Bash script that is only using debootstrap and chroot to get the job done.
 
-Download new versions from the Git repository https://github.com/brettaufheber/ubuntu-installer.
+Because the installation does not require any user interaction if fully configured, this solution is ideal for an automatic server setup.
+Install Ubuntu directly on a free partition of the target hardware or create a USB live system and use it as a recovery solution.
 
-=== Usage
+What makes this installer special? +
+It builds the system from scratch without using any pre-packaged OS image.
+Because each installation step can be seen in the script, this solution is very transparent and highly adaptable for personal needs.
 
-==== Command
+Download new versions from the Git repository: https://github.com/brettaufheber/ubuntu-installer
+
+== Dependencies
+
+The debootstrap tool which is required by the installer, might not be installed.
+
+[source]
+----
+sudo apt-get install debootstrap
+----
+
+== Usage
+
+=== Preparation: partitioning and formatting
+
+* Partitioning must be done before installation because the installer requires the system partition and home partition as block device files.
+* The block device file for the system partition must be unmounted before starting the installer.
+* *The system partition is formatted during installation.*
+* The home partition is *not* formatted during installation to keep the user data.
+In case of a new home partition, formatting must be done manually.
+
+=== Installation
+
+Before installation, it must be clear which boot mode is used for the target hardware.
+Most computers nowadays use the UEFI (Unified Extensible Firmware Interface) standard but often support the legacy BIOS (Basic Input/Output System) what can be enabled in the boot settings.
+Both firmware interfaces are supported by the installer.
+
+==== UEFI boot mode
+
+[source]
+----
+sudo ubuntu-installer.sh install-system \
+  ‑‑efi \
+  -u <your username> \
+  -n <hostname> \
+  -c <Ubuntu codename: bionic|cosmic|...> \
+  -x <block device file for system partition "/": /dev/...> \
+  -y <block device file for home partition "/home": /dev/...> \
+  -z <block device file for EFI partition "/boot/efi": /dev/...>
+----
+
+==== Legacy BIOS boot mode
 
 [source]
 ----
@@ -14,52 +58,153 @@ sudo ubuntu-installer.sh install-system \
   -u <your username> \
   -n <hostname> \
   -c <Ubuntu codename: bionic|cosmic|...> \
-  -b <optional software bundles: desktop,dev,...> \
-  -x <block device file for system partition '/': /dev/...> \
-  -y <block device file for home partition '/home': /dev/...>
+  -x <block device file for system partition "/": /dev/...> \
+  -y <block device file for home partition "/home": /dev/...> \
+  -z <block device file of the whole disk: /dev/...>
 ----
 
-==== Dependencies
+=== Parameters for the installation task
 
-The installer depends on "debootstrap".
+[cols="7,7,15,1",options="header"]
+|===
 
-[source]
-----
-sudo apt-get install debootstrap
-----
+|command line parameter
+|environment variable
+|description
+|required
 
-==== Partitioning and Formatting
+|`&#8209;&#8209;help` +
+`&#8209;h`
+|
+|If enabled the help text is shown and other arguments are ignored.
+|no
 
-* Partitioning must be done before installation because the installer requires the system partition and home partition
-as block device files.
-* The block device file for the system partition must be unmounted before starting the installer.
-* The system partition is formatted during installation.
-* The home partition is *not* formatted during installation to prevent data loss and must be formatted manually before
-installation.
+|`&#8209;&#8209;login` +
+`&#8209;l`
+|
+|This option allows logging into the shell for diagnostic purposes directly at the end of the installation.
+|no
 
-==== Software bundles
+|`&#8209;&#8209;efi` +
+`&#8209;e`
+|
+|Switch between UEFI boot mode and legacy BIOS boot mode. Default is legacy mode.
+|no
+
+|`&#8209;&#8209;username&nbsp;<&nbsp;>` +
+`&#8209;u&nbsp;<&nbsp;>`
+|`USERNAME_NEW`
+|The username for the first user of the system to be created. If unspecified the username of the current shell session is used.
+|no
+
+|`&#8209;&#8209;hostname&nbsp;<&nbsp;>` +
+`&#8209;n&nbsp;<&nbsp;>`
+|`HOSTNAME_NEW`
+|The hostname of the system to be created. If unspecified the hostname of the running system is used.
+|no
+
+|`&#8209;&#8209;codename&nbsp;<&nbsp;>` +
+`&#8209;c&nbsp;<&nbsp;>`
+|`CODENAME`
+|The first word of an Ubuntu codename in lowercase must be defined to refer to a specific Ubuntu version. See https://wiki.ubuntu.com/Releases[here] to choose from available releases.
+|yes
+
+|`&#8209;&#8209;bundles&nbsp;<&nbsp;>` +
+`&#8209;b&nbsp;<&nbsp;>`
+|`BUNDLES`
+|An optional comma separated list that allows installing additional software. See the topic "Software bundles" below.
+|no
+
+|`&#8209;&#8209;dev&#8209;root&nbsp;<&nbsp;>` +
+`&#8209;x&nbsp;<&nbsp;>`
+|`DEV_ROOT`
+|The path to the block device file of the system partition must be specified. This block device file must be unmounted during installation.
+|yes
+
+|`&#8209;&#8209;dev&#8209;home&nbsp;<&nbsp;>` +
+`&#8209;y&nbsp;<&nbsp;>`
+|`DEV_HOME`
+|The path to the block device file of the home partition must be specified. It does not matter whether the partition is mounted during installation.
+|yes
+
+|`&#8209;&#8209;dev&#8209;boot&nbsp;<&nbsp;>` +
+`&#8209;z&nbsp;<&nbsp;>`
+|`DEV_BOOT`
+|If the EFI option is enabled, the path to the block device file of the EFI partition must be specified. If the legacy boot is used the path to the block device file for the whole disk must be specified. See https://wiki.archlinux.org/title/Device_file#Block_device_names[here] for more information about device file names. It does not matter whether the partition is mounted during installation.
+|yes
+
+|`&#8209;&#8209;mirror&nbsp;<&nbsp;>`
+|`MIRROR`
+|The mirror used to resolve software packages. Default is "mirror://mirrors.ubuntu.com/mirrors.txt"
+|no, but recommended
+
+|`&#8209;&#8209;locales&nbsp;<&nbsp;>`
+|`LOCALES`
+|The locales (e.g. _C.UTF-8_, _en_US.UTF-8_, _de_DE.UTF-8_) of the system to be created. If unspecified the installer will ask interactively.
+|no
+
+|`&#8209;&#8209;time&#8209;zone&nbsp;<&nbsp;>`
+|`TZ`
+|The time zone (e.g. _UTC_, _Europe/Berlin_) of the system to be created. If unspecified the installer will ask interactively.
+|no
+
+|`&#8209;&#8209;user&#8209;gecos&nbsp;<&nbsp;>`
+|`USER_GECOS`
+|Additional GECOS information for the first user of the system to be created.
+|no
+
+|`&#8209;&#8209;password&nbsp;<&nbsp;>`
+|`PASSWORD`
+|The password for the first user of the system to be created. If unspecified the installer will ask interactively.
+|no
+
+|`&#8209;&#8209;keyboard&#8209;model&nbsp;<&nbsp;>`
+|`XKBMODEL`
+|The keyboard model. If unspecified the installer will ask interactively. See file "/etc/default/keyboard" of another system to find matching values.
+|no
+
+|`&#8209;&#8209;keyboard&#8209;layout&nbsp;<&nbsp;>`
+|`XKBLAYOUT`
+|The keyboard layout. If unspecified the installer will ask interactively. See file "/etc/default/keyboard" of another system to find matching values.
+|no
+
+|`&#8209;&#8209;keyboard&#8209;variant&nbsp;<&nbsp;>`
+|`XKBVARIANT`
+|The keyboard variant. If unspecified the installer will ask interactively. See file "/etc/default/keyboard" of another system to find matching values.
+|no
+
+|`&#8209;&#8209;keyboard&#8209;options&nbsp;<&nbsp;>`
+|`XKBOPTIONS`
+|The keyboard options. If unspecified the installer will ask interactively. See file "/etc/default/keyboard" of another system to find matching values.
+|no
+
+|===
+
+=== Software bundles
+
+Optionally, bundles (collection of software packages) can be installed together with the system.
+See the code to get an overview of the used packages.
 
 * net: network tooling
-* virt: QEMU/KVM with extended tooling
+* virt: QEMU/KVM with tooling
 * dev: basic equipment for software developers
 * desktop: minimal GNOME desktop
 * laptop: power saving tools for mobile devices
-* web: server and proxy for web
 * x86: architecture specific tools and libraries (requires dev)
 
-=== License
+== Other features
+
+The installer is able to create Docker container images and Linux containers.
+See the code to learn more about these features.
+
+== License
 
 Copyright (c) 2018 Eric Löffler
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see _http://www.gnu.org/licenses/_.
+You should have received a copy of the GNU General Public License along with this program.
+If not, see _http://www.gnu.org/licenses/_.
