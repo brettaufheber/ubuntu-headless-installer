@@ -1,18 +1,21 @@
 ########################
-# General
+# Misc
 #
 
-*.class
-*.bin
+*.temp
+*.tmp
+*.bak
 *.log
 *.pid
 *.seed
 *.lock
 *.swp
 *~
+
 .DS_Store
 Thumbs.db
 .cache
+.env
 
 /logs/
 /log/
@@ -20,6 +23,7 @@ Thumbs.db
 /tmp/
 
 hs_err_pid*
+replay_pid*
 
 ########################
 # Build tool / IDE
@@ -27,32 +31,45 @@ hs_err_pid*
 
 *.iws
 *.iml
+*.ipr
 
-.idea/
-.idea_modules/
-.vscode/
-.bsp/
-.lib/
-.settings/
+/.metadata
+/.worksheet
+/.project
+/.classpath
+/.loadpath
+/.history
 
-dist/
-build/
-out/
-target/
-node_modules/
+/.idea/
+/.idea_modules/
+/.vscode/
+/.bsp/
+/.lib/
+/.settings/
+/.target/
 
-project/boot/
-project/project/
-project/target/
+/bin/
+/dist/
+/build/
+/out/
+/target/
+/node_modules/
+/project/boot/
+/project/project/
+/project/target/
 
 ########################
-# Binary objects
+# Binaries
 #
 
+*.class
+*.pyc
+*.bin
 *.jar
 *.war
 *.nar
 *.ear
+*.sar
 *.zip
 *.7z
 *.bz2
