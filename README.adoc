@@ -1,4 +1,4 @@
-= Ubuntu Installer
+= Ubuntu Headless Installer
 
 Introducing the ultimate lightweight tool for installing Ubuntu Linux from the command line: A single Bash script that is only using debootstrap and chroot to get the job done.
 
@@ -6,10 +6,11 @@ Because the installation does not require any user interaction if fully configur
 Install Ubuntu directly on a free partition of the target hardware or create a USB live system and use it as a recovery solution.
 
 What makes this installer special? +
+The installer is a headless tool, which means that no graphical user interface is required.
 It builds the system from scratch without using any pre-packaged OS image.
 Because each installation step can be seen in the script, this solution is very transparent and highly adaptable for personal needs.
 
-Download new versions from the Git repository: https://github.com/brettaufheber/ubuntu-installer
+Download new versions from the Git repository: https://github.com/brettaufheber/ubuntu-headless-installer
 
 == Dependencies
 

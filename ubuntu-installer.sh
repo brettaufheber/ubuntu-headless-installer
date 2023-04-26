@@ -388,7 +388,7 @@ function task_install_script {
   TEMPDIR="$(mktemp -d)"
   BINDIR='/usr/local/sbin'
 
-  git clone 'https://github.com/brettaufheber/ubuntu-installer.git' "$TEMPDIR"
+  git clone 'https://github.com/brettaufheber/ubuntu-headless-installer.git' "$TEMPDIR"
 
   cp -v "$TEMPDIR/ubuntu-installer.sh" "$BINDIR"
   chmod a+x "$BINDIR/ubuntu-installer.sh"
@@ -408,7 +408,7 @@ function task_install_desktop_helpers {
   TEMPDIR="$(mktemp -d)"
   BINDIR='/usr/local/sbin'
 
-  git clone 'https://github.com/brettaufheber/ubuntu-installer.git' "$TEMPDIR"
+  git clone 'https://github.com/brettaufheber/ubuntu-headless-installer.git' "$TEMPDIR"
 
   for i in "$TEMPDIR/desktop-helpers"/*; do
 
@@ -1610,7 +1610,7 @@ function show_help {
   local URL
 
   # set project website URL
-  URL='https://github.com/brettaufheber/ubuntu-installer#usage'
+  URL='https://github.com/brettaufheber/ubuntu-headless-installer#usage'
 
   # open default browser with project website
   echo "$SELF_NAME: for help, see the project website $URL"
