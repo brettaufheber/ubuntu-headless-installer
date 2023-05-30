@@ -980,8 +980,8 @@ function task_install_lxc_image {
   chroot "$CHROOT" "$SELF_NAME" install-packages-container-image-minimal
 
   # configure packages
-  chroot "$CHROOT" "$SELF_NAME" configure-locales --locales "${LOCALES:-}"
-  chroot "$CHROOT" "$SELF_NAME" configure-tzdata --time-zone "${TZ:-}"
+  chroot "$CHROOT" "$SELF_NAME" configure-locales --locales "${LOCALES:-C.UTF-8}"
+  chroot "$CHROOT" "$SELF_NAME" configure-tzdata --time-zone "${TZ:-UTC}"
   chroot "$CHROOT" "$SELF_NAME" configure-tools
 
   # manage package sources
@@ -1082,8 +1082,8 @@ function task_install_docker_image {
   chroot "$CHROOT" "$SELF_NAME" install-packages-container-image-minimal
 
   # configure packages
-  chroot "$CHROOT" "$SELF_NAME" configure-locales --locales "${LOCALES:-}"
-  chroot "$CHROOT" "$SELF_NAME" configure-tzdata --time-zone "${TZ:-}"
+  chroot "$CHROOT" "$SELF_NAME" configure-locales --locales "${LOCALES:-C.UTF-8}"
+  chroot "$CHROOT" "$SELF_NAME" configure-tzdata --time-zone "${TZ:-UTC}"
   chroot "$CHROOT" "$SELF_NAME" configure-tools
 
   # manage package sources
