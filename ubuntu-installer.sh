@@ -1051,6 +1051,9 @@ function task_install_docker_image {
 
   # declare local variables
   local TEMPDIR
+  local IMAGE_RELEASE
+  local IMAGE_NAME
+  local CONTAINER_CMD
 
   # verify preconditions
   verify_root_privileges
@@ -1060,58 +1063,71 @@ function task_install_docker_image {
   # create temporary directory
   TEMPDIR="$(mktemp -d)"
 
+  # set root directory
+  CHROOT="$TEMPDIR/rootfs"
+
+  # create root directory
+  mkdir -p "$CHROOT"
+
+  # execute debootstrap
+  install_minimal_system
+
+  # configuration before starting chroot
+  configure_users
+
+  # mount OS resources into chroot environment
+  mounting_step_2
+
+  # install basic tools
+  chroot "$CHROOT" "$SELF_NAME" install-packages-container-image-minimal
+
+  # configure packages
+  chroot "$CHROOT" "$SELF_NAME" configure-locales --locales "${LOCALES:-}"
+  chroot "$CHROOT" "$SELF_NAME" configure-tzdata --time-zone "${TZ:-}"
+  chroot "$CHROOT" "$SELF_NAME" configure-tools
+
+  # manage package sources
+  chroot "$CHROOT" "$SELF_NAME" manage-package-sources --mirror "${MIRROR:-}"
+
+  # install software
+  chroot "$CHROOT" "$SELF_NAME" install-packages-base --bundles "${BUNDLES:-}"
+
+  # do some modifications for desktop environments
+  configure_desktop
+
+  # remove retrieved package files
+  chroot "$CHROOT" apt-get clean
+
+  # unmount everything
+  unmounting_step_2
+
   # define image name
   IMAGE_RELEASE="$(cat '/proc/sys/kernel/random/uuid' | tr -dc '[:alnum:]')"
   IMAGE_NAME="custom/ubuntu:$CODENAME-$IMAGE_RELEASE"
 
-  # create Dockerfile
-  cat >> "$TEMPDIR/Dockerfile" << 'EOF'
+  if command -v docker &> /dev/null; then
 
-ARG CODENAME
+    CONTAINER_CMD="docker"
 
-FROM ubuntu:${CODENAME}
+  elif command -v podman &> /dev/null; then
 
-ARG INSTALLER
-ARG BUNDLES
-ARG MIRROR
-ARG LOCALES
-ARG TZ
+    CONTAINER_CMD="podman"
 
-ADD ${INSTALLER} /usr/local/sbin/${INSTALLER}
-RUN chmod a+x /usr/local/sbin/${INSTALLER}
+  else
 
-RUN \
-    ${INSTALLER} install-packages-container-image-minimal && \
-    ${INSTALLER} configure-locales && \
-    ${INSTALLER} configure-tzdata && \
-    ${INSTALLER} configure-tools && \
-    ${INSTALLER} manage-package-sources && \
-    ${INSTALLER} install-packages-base && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    echo "$SELF_NAME: missing container tooling" >&2
+    exit 1
 
-EOF
+  fi
 
-  # copy script to temporary directory
-  cp "$SELF_PATH" "$TEMPDIR/"
-
-  # build docker image
-  docker build \
-    --no-cache \
-    --tag "$IMAGE_NAME" \
-    --build-arg INSTALLER="$SELF_NAME" \
-    --build-arg CODENAME="$CODENAME" \
-    --build-arg BUNDLES="${BUNDLES:-}" \
-    --build-arg MIRROR="${MIRROR:-}" \
-    --build-arg LOCALES="${LOCALES:-}" \
-    --build-arg TZ="${TZ:-}" \
-    "$TEMPDIR"
+  # install image
+  tar -cC "$CHROOT" . | "$CONTAINER_CMD" import - "$IMAGE_NAME"
 
   # remove temporary directory
   rm -rf "$TEMPDIR"
 
   # show that we are done here
-  echo "$SELF_NAME: Docker image $IMAGE_NAME created"
+  echo "$SELF_NAME: Docker image $IMAGE_NAME imported"
 }
 
 function task_configure_locales {
