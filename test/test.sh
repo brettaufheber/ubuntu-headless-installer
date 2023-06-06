@@ -93,8 +93,10 @@ function get_codenames {
     sed -n -e 's/^[[:space:]]*\([a-z]\+\)\/[[:space:]]\+\([0-9]\+\).*$/\1 \2/p' |
     grep -vE '^devel\s' |
     sort -nrk 2 |
-    head -"$LAST_VERSIONS_COUNT" |
-    cut -d ' ' -f 1
+    cut -d ' ' -f 1 |
+    xargs -I% ls -1 /usr/share/debootstrap/scripts/% 2> /dev/null |
+    grep -oE '[a-z]+$' |
+    head -"$LAST_VERSIONS_COUNT"
 }
 
 function before_each {
