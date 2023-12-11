@@ -663,9 +663,6 @@ function task_install_packages_base {
     # install support for Python
     apt-get -y install python3
     apt-get -y install python3-pip
-    apt-get -y install python3-pyqt5 pyqt5-dev-tools
-    apt-get -y install python3-gi
-    apt-get -y install python3-numpy python3-scipy python3-matplotlib
     apt-get -y install python-is-python3
 
     # install support for Ruby
