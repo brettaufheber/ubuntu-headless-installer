@@ -35,7 +35,7 @@ function run_test_suite {
 
   if [[ "$CODENAME" == "ALL" ]]; then
 
-    for i in $(get_codenames "$TEST_LAST_VERSIONS_COUNT"); do
+    for i in $(get_codenames); do
 
       before_each
       execute_installer "$i"
@@ -83,20 +83,41 @@ function execute_installer {
 
 function get_codenames {
 
-  local LAST_VERSIONS_COUNT
+  local REPO_BASE_URL
+  local MAX_LTS_SUPPORT_YEARS
+  local CURRENT_YEAR
+  local CURRENT_CODENAME
+  local CURRENT_LTS_YEAR
+  local VERSIONS_AVAILABLE
+  local METADATA
+  local META_CODENAME
+  local META_DATE
+  local META_YEAR
 
-  LAST_VERSIONS_COUNT="$1"
+  REPO_BASE_URL='http://archive.ubuntu.com/ubuntu/dists'
+  MAX_LTS_SUPPORT_YEARS=5
+  CURRENT_YEAR="$(date +%Y)"
 
-  wget -qO - 'http://archive.ubuntu.com/ubuntu/dists/' |
-    sed 's/<[^>]*>/ /g' |
-    grep -E '^\s*[a-z]+/' |
-    sed -n -e 's/^[[:space:]]*\([a-z]\+\)\/[[:space:]]\+\([0-9]\+\).*$/\1 \2/p' |
-    grep -vE '^devel\s' |
-    sort -nrk 2 |
-    cut -d ' ' -f 1 |
-    xargs -I% ls -1 /usr/share/debootstrap/scripts/% 2> /dev/null |
-    grep -oE '[a-z]+$' |
-    head -"$LAST_VERSIONS_COUNT"
+  VERSIONS_AVAILABLE="$(
+    wget -qO - "$REPO_BASE_URL/" |
+      sed 's/<[^>]*>/ /g' |
+      grep -E '^\s*[a-z]+/' |
+      sed -n -e 's/^[[:space:]]*\([a-z]\+\)\/[[:space:]]\+.*$/\1/p'
+  )"
+
+  while read -r CURRENT_CODENAME; do
+
+    METADATA="$(wget -qO - "$REPO_BASE_URL/$CURRENT_CODENAME/Release")"
+    META_CODENAME="$(echo "$METADATA" | grep -oP 'Codename:\s+\K[^\n]+')"
+    META_DATE="$(echo "$METADATA" | grep -oP 'Date:\s+\K[^\n]+')"
+    META_YEAR="$(date -d "$META_DATE" +%Y)"
+    CURRENT_LTS_YEAR=$((CURRENT_YEAR - META_YEAR))
+
+    if [[ "$META_CODENAME" = "$CURRENT_CODENAME" ]] && [[ "$CURRENT_LTS_YEAR" -le "$MAX_LTS_SUPPORT_YEARS" ]]; then
+      echo "$CURRENT_CODENAME"
+    fi
+
+  done <<< "$VERSIONS_AVAILABLE"
 }
 
 function before_each {
