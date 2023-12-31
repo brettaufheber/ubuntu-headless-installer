@@ -873,7 +873,7 @@ function task_install_system {
   # format $DEV_ROOT
   mkfs.ext4 "$DEV_ROOT"
 
-  # mount "/" and "/home"
+  # mount "/", "/home" and "/boot/efi"
   mounting_step_1
 
   # execute debootstrap
@@ -1678,6 +1678,25 @@ function mounting_step_1 {
   mkdir -p "$CHROOT"
   mount "$DEV_ROOT" "$CHROOT"
 
+  if "$USE_EFI"; then
+
+    # mount $DEV_BOOT
+    if mount | grep -q "$DEV_BOOT"; then
+
+      BOOT_PATH="$(df "$DEV_BOOT" | grep -oE '(/[[:alnum:]]+)+$' | head -1)"
+
+      mkdir -p "$CHROOT/boot/efi"
+      mount -o bind "$BOOT_PATH" "$CHROOT/boot/efi"
+
+    else
+
+      mkdir -p "$CHROOT/boot/efi"
+      mount "$DEV_BOOT" "$CHROOT/boot/efi"
+
+    fi
+
+  fi
+
   # mount $DEV_HOME
   if mount | grep -q "$DEV_HOME"; then
 
@@ -1702,6 +1721,12 @@ function unmounting_step_1 {
     # prepare unmount
     stop_chroot_processes
     sync
+
+    if "$USE_EFI"; then
+
+      umount -l "$CHROOT/boot/efi"
+
+    fi
 
     # unmount home directory and directory root
     umount "$CHHOME"
@@ -1729,25 +1754,6 @@ function mounting_step_2 {
   mount -o bind /dev/pts "$CHROOT/dev/pts"
   mount -o bind /run "$CHROOT/run"
   mount -o bind /tmp "$CHROOT/tmp"
-
-  if "$USE_EFI"; then
-
-    # mount $DEV_BOOT
-    if mount | grep -q "$DEV_BOOT"; then
-
-      BOOT_PATH="$(df "$DEV_BOOT" | grep -oE '(/[[:alnum:]]+)+$' | head -1)"
-
-      mkdir -p "$CHROOT/boot/efi"
-      mount -o bind "$BOOT_PATH" "$CHROOT/boot/efi"
-
-    else
-
-      mkdir -p "$CHROOT/boot/efi"
-      mount "$DEV_BOOT" "$CHROOT/boot/efi"
-
-    fi
-
-  fi
 }
 
 function unmounting_step_2 {
@@ -1766,12 +1772,6 @@ function unmounting_step_2 {
     umount -l "$CHROOT/dev"
     umount -l "$CHROOT/sys"
     umount -l "$CHROOT/proc"
-
-    if "$USE_EFI"; then
-
-      umount -l "$CHROOT/boot/efi"
-
-    fi
 
   fi
 }
