@@ -37,5 +37,7 @@ jobs:
     steps:
       - name: Checkout project
         uses: actions/checkout@v2
+      - name: Install missing packages
+        run: sudo apt-get --no-install-recommends --yes install debootstrap
       - name: Execute test
         run: sudo ./test/test.sh install-docker-image ALL
