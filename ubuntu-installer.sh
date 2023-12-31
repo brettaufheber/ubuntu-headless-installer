@@ -20,7 +20,7 @@ function main {
   #define long options
   LONG_OPTIONS='help,login,efi,separate-home'
   LONG_OPTIONS="$LONG_OPTIONS"',username:,hostname:,codename:,dev-root:,dev-home:,dev-boot:'
-  LONG_OPTIONS="$LONG_OPTIONS"',bundles:,bundles-file:'
+  LONG_OPTIONS="$LONG_OPTIONS"',bundles:,bundles-file:,debconf-file:'
   LONG_OPTIONS="$LONG_OPTIONS"',mirror:,locales:,time-zone:,user-gecos:,password:'
   LONG_OPTIONS="$LONG_OPTIONS"',keyboard-model:,keyboard-layout:,keyboard-variant:,keyboard-options:'
 
@@ -85,6 +85,10 @@ function main {
         ;;
       --bundles-file)
         BUNDLES_FILE="$2"
+        shift 2
+        ;;
+      --debconf-file)
+        DEBCONF_FILE="$2"
         shift 2
         ;;
       --mirror)
@@ -466,10 +470,6 @@ function task_install_packages_base {
   apt-get -y install debconf-utils
   apt-get -y install aptitude
 
-  # set default values for packages
-  echo wireshark-common wireshark-common/install-setuid select true | debconf-set-selections
-  echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
-
   # install version control system
   apt-get -y install git
 
@@ -500,8 +500,21 @@ function task_install_packages_base {
   # install everything else needed by a simple general purpose system
   aptitude -y install ~pstandard ~pimportant ~prequired
 
+  # pre-seed the debconf database
+  configure_debconf
+
   # install additional software
   install_bundles
+}
+
+function configure_debconf {
+
+  local FILE
+
+  FILE="${DEBCONF_FILE:-"/var/local/ubuntu-headless-installer/debconf.txt"}"
+
+  # set default values for packages
+  debconf-set-selections "$FILE"
 }
 
 function install_bundles {
@@ -691,7 +704,10 @@ function task_install_system {
   chroot "$CHROOT" "$SELF_NAME" manage-package-sources --mirror "${MIRROR:-}"
 
   # install software
-  chroot "$CHROOT" "$SELF_NAME" install-packages-base --bundles "${BUNDLES:-}" --bundles-file "${BUNDLES_FILE:-}"
+  chroot "$CHROOT" "$SELF_NAME" install-packages-base \
+    --bundles "${BUNDLES:-}" \
+    --bundles-file "${BUNDLES_FILE:-}" \
+    --debconf-file "${DEBCONF_FILE:-}"
 
   # do some modifications for desktop environments
   configure_desktop
@@ -762,7 +778,10 @@ function task_install_lxc_image {
   chroot "$CHROOT" "$SELF_NAME" manage-package-sources --mirror "${MIRROR:-}"
 
   # install software
-  chroot "$CHROOT" "$SELF_NAME" install-packages-base --bundles "${BUNDLES:-}" --bundles-file "${BUNDLES_FILE:-}"
+  chroot "$CHROOT" "$SELF_NAME" install-packages-base \
+    --bundles "${BUNDLES:-}" \
+    --bundles-file "${BUNDLES_FILE:-}" \
+    --debconf-file "${DEBCONF_FILE:-}"
 
   # do some modifications for desktop environments
   configure_desktop
@@ -863,7 +882,10 @@ function task_install_docker_image {
   chroot "$CHROOT" "$SELF_NAME" manage-package-sources --mirror "${MIRROR:-}"
 
   # install software
-  chroot "$CHROOT" "$SELF_NAME" install-packages-base --bundles "${BUNDLES:-}" --bundles-file "${BUNDLES_FILE:-}"
+  chroot "$CHROOT" "$SELF_NAME" install-packages-base \
+    --bundles "${BUNDLES:-}" \
+    --bundles-file "${BUNDLES_FILE:-}" \
+    --debconf-file "${DEBCONF_FILE:-}"
 
   # do some modifications for desktop environments
   configure_desktop
@@ -1292,6 +1314,7 @@ function install_minimal_system {
 
   mkdir -p "$VAR_DIR"
   cp -v "${BUNDLES_FILE:-"/var/local/ubuntu-headless-installer/bundles.txt"}" "$VAR_DIR"
+  cp -v "${DEBCONF_FILE:-"/var/local/ubuntu-headless-installer/debconf.txt"}" "$VAR_DIR"
 }
 
 function install_default_gnome_settings {

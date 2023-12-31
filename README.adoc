@@ -154,6 +154,11 @@ sudo ubuntu-installer.sh install-system \
 |The path to an optional file that contains information about bundles and packages.
 |no
 
+|`&#8209;&#8209;debconf&#8209;file&nbsp;<&nbsp;>`
+|`DEBCONF_FILE`
+|The path to an optional file that allows to pre-seed the debconf database.
+|no
+
 |`&#8209;&#8209;mirror&nbsp;<&nbsp;>`
 |`MIRROR`
 |The mirror used to resolve software packages. Default is "mirror://mirrors.ubuntu.com/mirrors.txt"

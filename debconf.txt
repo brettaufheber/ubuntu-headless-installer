@@ -1,0 +1,2 @@
+wireshark-common wireshark-common/install-setuid select true
+ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true
