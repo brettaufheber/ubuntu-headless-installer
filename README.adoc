@@ -43,6 +43,7 @@ Both firmware interfaces are supported by the installer.
 ----
 sudo ubuntu-installer.sh install-system \
   ‑‑efi \
+  ‑‑separate‑home \
   -u <your username> \
   -n <hostname> \
   -c <Ubuntu codename: bionic|cosmic|...> \
@@ -56,6 +57,7 @@ sudo ubuntu-installer.sh install-system \
 [source]
 ----
 sudo ubuntu-installer.sh install-system \
+  ‑‑separate‑home \
   -u <your username> \
   -n <hostname> \
   -c <Ubuntu codename: bionic|cosmic|...> \
@@ -92,6 +94,12 @@ sudo ubuntu-installer.sh install-system \
 |Switch between UEFI boot mode and legacy BIOS boot mode. Default is legacy mode.
 |no
 
+|`&#8209;&#8209;separate&#8209;home` +
+`&#8209;s`
+|
+|Use a separate home partition.
+|no
+
 |`&#8209;&#8209;username&nbsp;<&nbsp;>` +
 `&#8209;u&nbsp;<&nbsp;>`
 |`USERNAME_NEW`
@@ -126,7 +134,7 @@ sudo ubuntu-installer.sh install-system \
 `&#8209;y&nbsp;<&nbsp;>`
 |`DEV_HOME`
 |The path to the block device file of the home partition must be specified. It does not matter whether the partition is mounted during installation.
-|yes
+|only if a separate home partition is used
 
 |`&#8209;&#8209;dev&#8209;boot&nbsp;<&nbsp;>` +
 `&#8209;z&nbsp;<&nbsp;>`

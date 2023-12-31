@@ -15,9 +15,10 @@ function main {
   SHOW_HELP=false
   SHELL_LOGIN=false
   USE_EFI=false
+  USE_SEPARATE_HOME=false
 
   #define long options
-  LONG_OPTIONS='help,login,efi'
+  LONG_OPTIONS='help,login,efi,separate-home'
   LONG_OPTIONS="$LONG_OPTIONS"',username:,hostname:,codename:,bundles:,dev-root:,dev-home:,dev-boot:'
   LONG_OPTIONS="$LONG_OPTIONS"',mirror:,locales:,time-zone:,user-gecos:,password:'
   LONG_OPTIONS="$LONG_OPTIONS"',keyboard-model:,keyboard-layout:,keyboard-variant:,keyboard-options:'
@@ -25,7 +26,7 @@ function main {
   # parse arguments
   OPTIONS_PARSED=$(
     getopt \
-      --options 'hleu:n:c:b:x:y:z:' \
+      --options 'hlesu:n:c:b:x:y:z:' \
       --longoptions "$LONG_OPTIONS" \
       --name "$SELF_NAME" \
       -- "$@"
@@ -47,6 +48,10 @@ function main {
         ;;
       -e | --efi)
         USE_EFI=true
+        shift 1
+        ;;
+      -s | --separate-home)
+        USE_SEPARATE_HOME=true
         shift 1
         ;;
       -u | --username)
@@ -335,11 +340,16 @@ function verify_mounting_root {
 
 function verify_mounting_home {
 
-  # the block device file for "/home" must exist
-  if [[ -z "${DEV_HOME:-}" ]] || [[ ! -b "${DEV_HOME:-}" ]]; then
+  # only perform checks if a separate home partition is used
+  if "$USE_SEPARATE_HOME"; then
 
-    echo "$SELF_NAME: require device file for /home" >&2
-    exit 1
+    # the block device file for "/home" must exist
+    if [[ -z "${DEV_HOME:-}" ]] || [[ ! -b "${DEV_HOME:-}" ]]; then
+
+      echo "$SELF_NAME: require device file for /home" >&2
+      exit 1
+
+    fi
 
   fi
 }
@@ -1346,9 +1356,8 @@ function configure_fstab {
   # set path for output file
   FILE="$CHROOT/etc/fstab"
 
-  # get UUID of system and home partition
+  # get UUID of system partition
   UUID_ROOT="$(blkid -s UUID -o value "$DEV_ROOT")"
-  UUID_HOME="$(blkid -s UUID -o value "$DEV_HOME")"
 
   if "$USE_EFI"; then
 
@@ -1368,12 +1377,30 @@ function configure_fstab {
 
   fi
 
+  if "$USE_SEPARATE_HOME"; then
+
+    # get UUID of home partition
+    UUID_HOME="$(blkid -s UUID -o value "$DEV_HOME")"
+
+    # allows to write home specific entry to fstab file
+    FILE_HOME="$FILE"
+
+  else
+
+    # an UUID is not needed in this case
+    UUID_HOME=""
+
+    # discard home specific entry
+    FILE_HOME="/dev/null"
+
+  fi
+
   # edit /etc/fstab
   echo '# /etc/fstab' > "$FILE"
   echo '# <file system>     <mount point>     <type>     <options>                        <dump> <pass>' >> "$FILE"
   echo "UUID=$UUID_ROOT     /                 ext4       defaults,errors=remount-ro       0      1" >> "$FILE"
   echo "UUID=$UUID_UEFI     /boot/efi         vfat       defaults                         0      2" >> "$FILE_UEFI"
-  echo "UUID=$UUID_HOME     /home             ext4       defaults                         0      2" >> "$FILE"
+  echo "UUID=$UUID_HOME     /home             ext4       defaults                         0      2" >> "$FILE_HOME"
   echo "proc                /proc             proc       defaults                         0      0" >> "$FILE"
   echo "sys                 /sys              sysfs      defaults                         0      0" >> "$FILE"
   echo "tmpfs               /tmp              tmpfs      defaults,size=40%                0      0" >> "$FILE"
@@ -1672,7 +1699,6 @@ function mounting_step_1 {
 
   # set path to mounting point
   CHROOT="/mnt/ubuntu-$(cat '/proc/sys/kernel/random/uuid')"
-  CHHOME="$CHROOT/home"
 
   # mount $DEV_ROOT
   mkdir -p "$CHROOT"
@@ -1697,18 +1723,22 @@ function mounting_step_1 {
 
   fi
 
-  # mount $DEV_HOME
-  if mount | grep -q "$DEV_HOME"; then
+  if "$USE_SEPARATE_HOME"; then
 
-    HOME_PATH="$(df "$DEV_HOME" | grep -oE '(/[[:alnum:]]+)+$' | head -1)"
+    # mount $DEV_HOME
+    if mount | grep -q "$DEV_HOME"; then
 
-    mkdir -p "$CHHOME"
-    mount -o bind "$HOME_PATH" "$CHHOME"
+      HOME_PATH="$(df "$DEV_HOME" | grep -oE '(/[[:alnum:]]+)+$' | head -1)"
 
-  else
+      mkdir -p "$CHROOT/home"
+      mount -o bind "$HOME_PATH" "$CHROOT/home"
 
-    mkdir -p "$CHHOME"
-    mount "$DEV_HOME" "$CHHOME"
+    else
+
+      mkdir -p "$CHROOT/home"
+      mount "$DEV_HOME" "$CHROOT/home"
+
+    fi
 
   fi
 }
@@ -1728,8 +1758,13 @@ function unmounting_step_1 {
 
     fi
 
-    # unmount home directory and directory root
-    umount "$CHHOME"
+    if "$USE_SEPARATE_HOME"; then
+
+      umount "$CHROOT/home"
+
+    fi
+
+    # unmount directory root
     umount "$CHROOT"
     rmdir "$CHROOT"
 

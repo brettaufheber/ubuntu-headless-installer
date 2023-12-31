@@ -63,6 +63,7 @@ function execute_installer {
   echo "$SELF_NAME: installation with codename $CODENAME"
 
   ./ubuntu-installer.sh "$TASK" \
+    --separate-home \
     --username "$TEST_USERNAME" \
     --hostname "$TEST_HOSTNAME" \
     --codename "$CODENAME" \
