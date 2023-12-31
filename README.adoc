@@ -23,6 +23,13 @@ sudo apt-get install debootstrap
 
 == Usage
 
+This tool can be installed by calling the following command:
+
+[source]
+----
+sudo ./install.sh
+----
+
 === Preparation: partitioning and formatting
 
 * Partitioning must be done before installation because the installer requires the system partition and home partition as block device files.
@@ -31,7 +38,7 @@ sudo apt-get install debootstrap
 * The home partition is *not* formatted during installation to keep the user data.
 In case of a new home partition, formatting must be done manually.
 
-=== Installation
+=== Install Ubuntu
 
 Before installation, it must be clear which boot mode is used for the target hardware.
 Most computers nowadays use the UEFI (Unified Extensible Firmware Interface) standard but often support the legacy BIOS (Basic Input/Output System) what can be enabled in the boot settings.

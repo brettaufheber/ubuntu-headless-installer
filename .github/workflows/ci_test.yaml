@@ -19,6 +19,8 @@ jobs:
         uses: actions/checkout@v2
       - name: Install missing packages
         run: sudo apt-get --no-install-recommends --yes install debootstrap
+      - name: Install script
+        run: sudo ./install.sh
       - name: Execute test
         run: sudo ./test/test.sh install-system ALL
 
@@ -29,6 +31,8 @@ jobs:
         uses: actions/checkout@v2
       - name: Install missing packages
         run: sudo apt-get --no-install-recommends --yes install debootstrap
+      - name: Install script
+        run: sudo ./install.sh
       - name: Execute test
         run: sudo ./test/test.sh install-lxc-image ALL
 
@@ -39,5 +43,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Install missing packages
         run: sudo apt-get --no-install-recommends --yes install debootstrap
+      - name: Install script
+        run: sudo ./install.sh
       - name: Execute test
         run: sudo ./test/test.sh install-docker-image ALL

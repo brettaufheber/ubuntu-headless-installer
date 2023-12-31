@@ -158,12 +158,6 @@ function main {
 
     # select task
     case "$TASK" in
-      install-script)
-        task_install_script
-        ;;
-      install-desktop-helpers)
-        task_install_desktop_helpers
-        ;;
       update)
         task_update
         ;;
@@ -386,52 +380,6 @@ function verify_mounting_boot {
   fi
 }
 
-function task_install_script {
-
-  # declare local variables
-  local TEMPDIR
-  local BINDIR
-
-  # verify preconditions
-  verify_root_privileges
-
-  TEMPDIR="$(mktemp -d)"
-  BINDIR='/usr/local/sbin'
-
-  git clone 'https://github.com/brettaufheber/ubuntu-headless-installer.git' "$TEMPDIR"
-
-  cp -v "$TEMPDIR/ubuntu-installer.sh" "$BINDIR"
-  chmod a+x "$BINDIR/ubuntu-installer.sh"
-
-  rm -rf "$TEMPDIR"
-}
-
-function task_install_desktop_helpers {
-
-  # declare local variables
-  local TEMPDIR
-  local BINDIR
-
-  # verify preconditions
-  verify_root_privileges
-
-  TEMPDIR="$(mktemp -d)"
-  BINDIR='/usr/local/sbin'
-
-  git clone 'https://github.com/brettaufheber/ubuntu-headless-installer.git' "$TEMPDIR"
-
-  for i in "$TEMPDIR/desktop-helpers"/*; do
-
-    f="$(basename "$i")"
-
-    cp -v "$i" "$BINDIR"
-    chmod a+x "$BINDIR/$f"
-
-  done
-
-  rm -rf "$TEMPDIR"
-}
-
 function task_update {
 
   # verify preconditions
@@ -451,9 +399,6 @@ function task_update {
 
     # update via Flatpak package manager
     flatpak -y update
-
-    # update helper scripts
-    ubuntu-installer.sh install-desktop-helpers
 
   fi
 }
@@ -1501,9 +1446,6 @@ function configure_desktop {
     # add flatpak remote: flathub
     chroot "$CHROOT" flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 
-    # install helper scripts
-    chroot "$CHROOT" "$SELF_NAME" install-desktop-helpers
-
     # modify default GNOME settings
     install_default_gnome_settings
 
@@ -1515,9 +1457,11 @@ function install_minimal_system {
   # install minimal system without kernel or bootloader
   debootstrap --arch=amd64 "$CODENAME" "$CHROOT" 'http://archive.ubuntu.com/ubuntu'
 
+  SBIN_DIR="$CHROOT/usr/local/sbin"
+
   # make this script available
-  cp -f "$SELF_PATH" "$CHROOT/usr/local/sbin"
-  chmod a+x "$CHROOT/usr/local/sbin/$SELF_NAME"
+  cp -f "$SELF_PATH" "$SBIN_DIR"
+  chmod a+x "$SBIN_DIR/$SELF_NAME"
 }
 
 function install_default_gnome_settings {
