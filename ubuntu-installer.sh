@@ -158,9 +158,6 @@ function main {
 
     # select task
     case "$TASK" in
-      update)
-        task_update
-        ;;
       create-user)
         task_create_user
         ;;
@@ -376,29 +373,6 @@ function verify_mounting_boot {
       exit 1
 
     fi
-
-  fi
-}
-
-function task_update {
-
-  # verify preconditions
-  verify_root_privileges
-  verify_package_bundles
-
-  # update via APT package manager
-  apt-get update
-  apt-get -y dist-upgrade
-  apt-get -y autoremove --purge
-
-  # update via Snappy package manager
-  snap refresh
-
-  # do this only for desktop environments
-  if [[ ${BARRAY[*]} =~ 'desktop' ]]; then
-
-    # update via Flatpak package manager
-    flatpak -y update
 
   fi
 }
