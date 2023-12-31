@@ -1,0 +1,169 @@
+### network tooling ###
+[net]
+
+curl
+wget
+iputils-arping iputils-ping iputils-tracepath iputils-clockdiff
+iproute2
+net-tools
+dnsutils
+tcpdump
+telnet
+nmap
+ncat
+socat
+tshark
+traceroute
+tcptraceroute
+whois
+ldap-utils
+postgresql-client
+
+### virtualization software ###
+[virt]
+
+qemu qemu-kvm
+virtinst libvirt-daemon-system
+
+### development software ###
+[dev]
+
+# install support for Assembly/C/C++
+build-essential
+clang lldb lld llvm
+cmake
+libboost-all-dev
+qtbase5-dev qtbase5-dev-tools qttools5-dev qttools5-dev-tools qtchooser qt5-qmake
+libgtkmm-3.0-dev libgtkmm-2.4-dev
+
+# install support for Ada
+gnat
+
+# install support for Objective-C
+gobjc
+
+# install support for Perl
+perl
+libgtk3-perl
+
+# install support for PHP
+php-cli php-fpm
+php-pear
+
+# install support for Haskell
+ghc
+
+# install support for Python
+python3
+python3-pip
+python-is-python3
+
+# install support for Ruby
+ruby-full
+rubygems
+
+# install support for JavaScript (Node.js environment)
+nodejs
+npm
+
+# install support for C# and Visual Basic (Mono environment)
+mono-complete mono-mcs mono-vbnc
+
+# install support for Go
+golang
+
+# install support for Rust
+rustc
+cargo
+
+# install support for Java, Scala and other JVM languages
+openjdk-11-jdk
+ant
+maven
+gradle
+sbt
+
+# install linting tool for shell scripts
+shellcheck
+
+### x86 related software ###
+[dev:x86]
+
+# install x86 specific tools and libraries for Assembly/C/C++
+gcc-multilib g++-multilib
+nasm
+
+### minimal desktop ###
+[desktop]
+
+# install GTK+ libraries
+libgtk-3-dev libgtk2.0-dev
+
+# install GNOME desktop
+gucharmap
+gnome-core
+gnome-contacts
+gnome-calendar
+gnome-software-plugin-snap
+gnome-software-plugin-flatpak flatpak
+language-selector-gnome
+ubuntu-restricted-extras
+materia-gtk-theme elementary-icon-theme dmz-cursor-theme
+gnome-tweaks
+dconf-cli dconf-editor
+gedit ghex
+
+# install some plugins for VPN support
+network-manager-pptp network-manager-pptp-gnome
+network-manager-l2tp network-manager-l2tp-gnome
+network-manager-openvpn network-manager-openvpn-gnome
+network-manager-openconnect network-manager-openconnect-gnome
+network-manager-vpnc network-manager-vpnc-gnome
+network-manager-strongswan
+
+# install scanner and printer support
+gscan2pdf
+cups cups-client cups-bsd
+
+# install font files
+fonts-open-sans
+fonts-dejavu
+fonts-ubuntu fonts-ubuntu-console
+
+# install OpenJDK JRE
+openjdk-11-jre
+
+# install audio recorder
+audacity
+
+# install webcam tooling
+guvcview
+
+# install web browsers
+firefox
+google-chrome-stable
+chrome-gnome-shell
+
+# install language pack
+language-pack-gnome-%LANG%
+
+### minimal desktop with virtualization software ###
+[desktop:virt]
+
+# graphical VM manager
+virt-manager
+
+### minimal desktop with network tooling ###
+[desktop:net]
+
+# install network packet analyzer
+wireshark
+
+### power saving tools ###
+[laptop]
+
+# install tool to collect power-usage metrics
+powertop
+
+# install advanced power management
+tlp tlp-rdw

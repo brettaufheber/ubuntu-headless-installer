@@ -125,12 +125,6 @@ sudo ubuntu-installer.sh install-system \
 |The first word of an Ubuntu codename in lowercase must be defined to refer to a specific Ubuntu version. See https://wiki.ubuntu.com/Releases[here] to choose from available releases.
 |yes
 
-|`&#8209;&#8209;bundles&nbsp;<&nbsp;>` +
-`&#8209;b&nbsp;<&nbsp;>`
-|`BUNDLES`
-|An optional comma separated list that allows installing additional software. See the topic "Software bundles" below.
-|no
-
 |`&#8209;&#8209;dev&#8209;root&nbsp;<&nbsp;>` +
 `&#8209;x&nbsp;<&nbsp;>`
 |`DEV_ROOT`
@@ -148,6 +142,17 @@ sudo ubuntu-installer.sh install-system \
 |`DEV_BOOT`
 |If the EFI option is enabled, the path to the block device file of the EFI partition must be specified. If the legacy boot is used the path to the block device file for the whole disk must be specified. See https://wiki.archlinux.org/title/Device_file#Block_device_names[here] for more information about device file names. It does not matter whether the partition is mounted during installation.
 |yes
+
+|`&#8209;&#8209;bundles&nbsp;<&nbsp;>` +
+`&#8209;b&nbsp;<&nbsp;>`
+|`BUNDLES`
+|An optional comma separated list that allows installing additional software. See the topic "Software bundles" below.
+|no
+
+|`&#8209;&#8209;bundles&#8209;file&nbsp;<&nbsp;>`
+|`BUNDLES_FILE`
+|The path to an optional file that contains information about bundles and packages.
+|no
 
 |`&#8209;&#8209;mirror&nbsp;<&nbsp;>`
 |`MIRROR`

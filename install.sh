@@ -61,12 +61,14 @@ function task_install_script {
 
   # declare local variables
   local SBIN_DIR
+  local VAR_DIR
   local ENTRY
 
   # verify preconditions
   verify_root_privileges
 
   SBIN_DIR='/usr/local/sbin'
+  VAR_DIR='/var/local/ubuntu-headless-installer'
 
   cp -v "$SELF_DIR/ubuntu-installer.sh" "$SBIN_DIR"
   chmod a+x "$SBIN_DIR/ubuntu-installer.sh"
@@ -77,6 +79,9 @@ function task_install_script {
       chmod a+x "$SBIN_DIR/$(basename "$ENTRY")"
     done
   fi
+
+  mkdir -p "$VAR_DIR"
+  cp -v "$SELF_DIR/bundles.txt" "$VAR_DIR"
 }
 
 set -euo pipefail

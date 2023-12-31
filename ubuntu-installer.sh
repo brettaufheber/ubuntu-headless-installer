@@ -19,14 +19,15 @@ function main {
 
   #define long options
   LONG_OPTIONS='help,login,efi,separate-home'
-  LONG_OPTIONS="$LONG_OPTIONS"',username:,hostname:,codename:,bundles:,dev-root:,dev-home:,dev-boot:'
+  LONG_OPTIONS="$LONG_OPTIONS"',username:,hostname:,codename:,dev-root:,dev-home:,dev-boot:'
+  LONG_OPTIONS="$LONG_OPTIONS"',bundles:,bundles-file:'
   LONG_OPTIONS="$LONG_OPTIONS"',mirror:,locales:,time-zone:,user-gecos:,password:'
   LONG_OPTIONS="$LONG_OPTIONS"',keyboard-model:,keyboard-layout:,keyboard-variant:,keyboard-options:'
 
   # parse arguments
   OPTIONS_PARSED=$(
     getopt \
-      --options 'hlesu:n:c:b:x:y:z:' \
+      --options 'hlesu:n:c:x:y:z:b:' \
       --longoptions "$LONG_OPTIONS" \
       --name "$SELF_NAME" \
       -- "$@"
@@ -66,10 +67,6 @@ function main {
         CODENAME="$2"
         shift 2
         ;;
-      -b | --bundles)
-        BUNDLES="$2"
-        shift 2
-        ;;
       -x | --dev-root)
         DEV_ROOT="$2"
         shift 2
@@ -80,6 +77,14 @@ function main {
         ;;
       -z | --dev-boot)
         DEV_BOOT="$2"
+        shift 2
+        ;;
+      -b | --bundles)
+        BUNDLES="$2"
+        shift 2
+        ;;
+      --bundles-file)
+        BUNDLES_FILE="$2"
         shift 2
         ;;
       --mirror)
@@ -286,38 +291,6 @@ function verify_codename {
   fi
 }
 
-function verify_package_bundles {
-
-  if [[ -z "${BUNDLES:-}" ]]; then
-
-    # by default, use an empty array for bundle entries
-    declare -a BARRAY
-
-  else
-
-    # create an array with bundle entries
-    readarray -td ',' BARRAY <<< "$BUNDLES"
-    for i in "${!BARRAY[@]}"; do BARRAY[$i]="$(echo "${BARRAY[$i]}" | tr -d '[:space:]')"; done
-
-  fi
-
-  for i in "${!BARRAY[@]}"; do
-
-    if [[ ${BARRAY[$i]} != 'net' ]] &&
-        [[ ${BARRAY[$i]} != 'virt' ]] &&
-        [[ ${BARRAY[$i]} != 'dev' ]] &&
-        [[ ${BARRAY[$i]} != 'desktop' ]] &&
-        [[ ${BARRAY[$i]} != 'laptop' ]] &&
-        [[ ${BARRAY[$i]} != 'x86' ]]; then
-
-      echo "$SELF_NAME: require valid bundle names [net, virt, dev, desktop, laptop, x86]" >&2
-      exit 1
-
-    fi
-
-  done
-}
-
 function verify_mounting_root {
 
   # the block device file for "/" must exist and be unmounted
@@ -478,7 +451,6 @@ function task_install_packages_base {
 
   # verify preconditions
   verify_root_privileges
-  verify_package_bundles
 
   # disable interactive interfaces
   export DEBIAN_FRONTEND=noninteractive
@@ -528,198 +500,76 @@ function task_install_packages_base {
   # install everything else needed by a simple general purpose system
   aptitude -y install ~pstandard ~pimportant ~prequired
 
-  # network tools
-  if [[ ${BARRAY[*]} =~ 'net' ]]; then
+  # install additional software
+  install_bundles
+}
 
-    # install network tooling
-    apt-get -y install curl
-    apt-get -y install wget
-    apt-get -y install iputils-*
-    apt-get -y install iproute2
-    apt-get -y install net-tools
-    apt-get -y install dnsutils
-    apt-get -y install tcpdump
-    apt-get -y install telnet
-    apt-get -y install nmap
-    apt-get -y install ncat
-    apt-get -y install socat
-    apt-get -y install tshark
-    apt-get -y install traceroute
-    apt-get -y install tcptraceroute
-    apt-get -y install whois
-    apt-get -y install ldap-utils
-    apt-get -y install postgresql-client
+function install_bundles {
 
+  local FILE
+  local LINE
+  local CATEGORY_PATTERN
+  local CATEGORY_MAIN
+  local CATEGORY_SUB
+  local SYSLANG
+  local INDEX
+  local BARRAY
+  local INSTALL_GRANTED
+
+  FILE="${BUNDLES_FILE:-"/var/local/ubuntu-headless-installer/bundles.txt"}"
+  CATEGORY_PATTERN="^\[([a-z0-9_]+)(:([a-z0-9_]+))?\]$"
+  INSTALL_GRANTED=false
+
+  source /etc/default/locale
+  SYSLANG="$(echo "$LANG" | grep -oE '^([a-zA-Z]+)' | sed -r 's/^(C|POSIX)$/en/')"
+  SYSLANG="${SYSLANG:-'en'}"
+
+  if [[ -z "${BUNDLES:-}" ]]; then
+    # by default, use an empty array for bundle entries
+    declare -a BARRAY
+  else
+    # create an array with bundle entries
+    readarray -td ',' BARRAY <<<"$BUNDLES"
+    for INDEX in "${!BARRAY[@]}"; do BARRAY[$INDEX]="$(echo "${BARRAY[$INDEX]}" | tr -d '[:space:]')"; done
   fi
 
-  # virtualization software
-  if [[ ${BARRAY[*]} =~ 'virt' ]]; then
+  while IFS= read -r LINE; do
 
-    # install machine emulator and virtualizer with tooling
-    apt-get -y install qemu qemu-kvm
-    apt-get -y install virtinst libvirt-daemon-system
+    # remove comments
+    LINE="$(echo "$LINE" | cut -d '#' -f 1)"
 
-  fi
+    # remove leading and trailing whitespaces
+    LINE="$(echo "$LINE" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
 
-  # development software
-  if [[ ${BARRAY[*]} =~ 'dev' ]]; then
+    # substitute LANG placeholder
+    LINE="${LINE//\%LANG\%/$SYSLANG}"
 
-    # install support for Assembly/C/C++
-    apt-get -y install build-essential
-    apt-get -y install clang lldb lld llvm
-    apt-get -y install cmake
-    apt-get -y install libboost-all-dev
-    apt-get -y install qtbase5-dev qtbase5-dev-tools qttools5-dev qttools5-dev-tools qtchooser qt5-qmake
-    apt-get -y install libgtkmm-3.0-dev libgtkmm-2.4-dev
+    # skip empty lines
+    if [[ -z "$LINE" ]]; then
+      continue
+    fi
 
-    # install support for Ada
-    apt-get -y install gnat
+    if [[ "$LINE" =~ $CATEGORY_PATTERN ]]; then
 
-    # install support for Objective-C
-    apt-get -y install gobjc
+      CATEGORY_MAIN="${BASH_REMATCH[1]}"
+      CATEGORY_SUB="${BASH_REMATCH[3]}"
 
-    # install support for Perl
-    apt-get -y install perl
-    apt-get -y install libgtk3-perl
+      if echo "${BARRAY[@]}" | grep -qw "$CATEGORY_MAIN" &&
+        { [[ -z "$CATEGORY_SUB" ]] || echo "${BARRAY[@]}" | grep -qw "$CATEGORY_SUB"; }; then
+        INSTALL_GRANTED=true
+      else
+        INSTALL_GRANTED=false
+      fi
 
-    # install support for PHP
-    apt-get -y install php-cli php-fpm
-    apt-get -y install php-pear
+    else
 
-    # install support for Haskell
-    apt-get -y install ghc
+      if "$INSTALL_GRANTED"; then
+        # install APT packages
+        echo "$LINE" | xargs apt-get -y install
+      fi
 
-    # install support for Python
-    apt-get -y install python3
-    apt-get -y install python3-pip
-    apt-get -y install python-is-python3
-
-    # install support for Ruby
-    apt-get -y install ruby-full
-    apt-get -y install rubygems
-
-    # install support for JavaScript (Node.js environment)
-    apt-get -y install nodejs
-    apt-get -y install npm
-
-    # install support for C# and Visual Basic (Mono environment)
-    apt-get -y install mono-complete mono-mcs mono-vbnc
-
-    # install support for Go
-    apt-get -y install golang
-
-    # install support for Rust
-    apt-get -y install rustc
-    apt-get -y install cargo
-
-    # install support for Java, Scala and other JVM languages
-    apt-get -y install openjdk-11-jdk
-    apt-get -y install ant
-    apt-get -y install maven
-    apt-get -y install gradle
-    apt-get -y install sbt
-
-    # install linting tool for shell scripts
-    apt-get -y install shellcheck
-
-  fi
-
-  # x86 related software
-  if [[ ${BARRAY[*]} =~ 'dev' ]] && [[ ${BARRAY[*]} =~ 'x86' ]]; then
-
-    # install x86 specific tools and libraries for Assembly/C/C++
-    apt-get -y install gcc-multilib g++-multilib
-    apt-get -y install nasm
-
-  fi
-
-  # minimal desktop
-  if [[ ${BARRAY[*]} =~ 'desktop' ]]; then
-
-    # get current system language
-    source /etc/default/locale
-    SYSLANG="$(echo "$LANG" | grep -oE '^([a-zA-Z]+)' | sed -r 's/^(C|POSIX)$/en/')"
-    SYSLANG="${SYSLANG:-'en'}"
-
-    # install GTK+ libraries
-    apt-get -y install libgtk-3-dev libgtk2.0-dev
-
-    # install GNOME desktop
-    apt-get -y install gucharmap
-    apt-get -y install gnome-core
-    apt-get -y install gnome-contacts
-    apt-get -y install gnome-calendar
-    apt-get -y install gnome-software-plugin-snap
-    apt-get -y install gnome-software-plugin-flatpak flatpak
-    apt-get -y install language-selector-gnome
-    apt-get -y install ubuntu-restricted-extras
-    apt-get -y install materia-gtk-theme elementary-icon-theme dmz-cursor-theme
-    apt-get -y install gnome-tweaks
-    apt-get -y install dconf-cli dconf-editor
-    apt-get -y install gedit ghex
-
-    # install some plugins for VPN support
-    apt-get -y install network-manager-pptp network-manager-pptp-gnome
-    apt-get -y install network-manager-l2tp network-manager-l2tp-gnome
-    apt-get -y install network-manager-openvpn network-manager-openvpn-gnome
-    apt-get -y install network-manager-openconnect network-manager-openconnect-gnome
-    apt-get -y install network-manager-vpnc network-manager-vpnc-gnome
-    apt-get -y install network-manager-strongswan
-
-    # install scanner and printer support
-    apt-get -y install gscan2pdf
-    apt-get -y install cups cups-client cups-bsd
-
-    # install font files
-    apt-get -y install fonts-open-sans
-    apt-get -y install fonts-dejavu
-    apt-get -y install fonts-ubuntu fonts-ubuntu-console
-
-    # install OpenJDK JRE
-    apt-get -y install openjdk-11-jre
-
-    # install audio recorder
-    apt-get -y install audacity
-
-    # install webcam tooling
-    apt-get -y install guvcview
-
-    # install web browsers
-    apt-get -y install firefox
-    apt-get -y install google-chrome-stable
-    apt-get -y install chrome-gnome-shell
-
-    # install language pack
-    apt-get -y install "language-pack-gnome-$SYSLANG"
-
-  fi
-
-  # minimal desktop with virtualization software
-  if [[ ${BARRAY[*]} =~ 'desktop' ]] && [[ ${BARRAY[*]} =~ 'virt' ]]; then
-
-    # graphical VM manager
-    apt-get -y install virt-manager
-
-  fi
-
-  # minimal desktop with network tooling
-  if [[ ${BARRAY[*]} =~ 'desktop' ]] && [[ ${BARRAY[*]} =~ 'net' ]]; then
-
-    # install network packet analyzer
-    apt-get -y install wireshark
-
-  fi
-
-  # power saving tools
-  if [[ ${BARRAY[*]} =~ 'laptop' ]]; then
-
-    # install tool to collect power-usage metrics
-    apt-get -y install powertop
-
-    # install advanced power management
-    apt-get -y install tlp tlp-rdw
-
-  fi
+    fi
+  done <"$FILE"
 }
 
 function task_install_packages_system_minimal {
@@ -794,7 +644,6 @@ function task_install_system {
   verify_username
   verify_hostname
   verify_codename
-  verify_package_bundles
   verify_mounting_root
   verify_mounting_home
   verify_mounting_boot
@@ -842,7 +691,7 @@ function task_install_system {
   chroot "$CHROOT" "$SELF_NAME" manage-package-sources --mirror "${MIRROR:-}"
 
   # install software
-  chroot "$CHROOT" "$SELF_NAME" install-packages-base --bundles "${BUNDLES:-}"
+  chroot "$CHROOT" "$SELF_NAME" install-packages-base --bundles "${BUNDLES:-}" --bundles-file "${BUNDLES_FILE:-}"
 
   # do some modifications for desktop environments
   configure_desktop
@@ -882,7 +731,6 @@ function task_install_lxc_image {
   # verify preconditions
   verify_root_privileges
   verify_codename
-  verify_package_bundles
 
   # create temporary directory
   TEMPDIR="$(mktemp -d)"
@@ -914,7 +762,7 @@ function task_install_lxc_image {
   chroot "$CHROOT" "$SELF_NAME" manage-package-sources --mirror "${MIRROR:-}"
 
   # install software
-  chroot "$CHROOT" "$SELF_NAME" install-packages-base --bundles "${BUNDLES:-}"
+  chroot "$CHROOT" "$SELF_NAME" install-packages-base --bundles "${BUNDLES:-}" --bundles-file "${BUNDLES_FILE:-}"
 
   # do some modifications for desktop environments
   configure_desktop
@@ -984,7 +832,6 @@ function task_install_docker_image {
   # verify preconditions
   verify_root_privileges
   verify_codename
-  verify_package_bundles
 
   # create temporary directory
   TEMPDIR="$(mktemp -d)"
@@ -1016,7 +863,7 @@ function task_install_docker_image {
   chroot "$CHROOT" "$SELF_NAME" manage-package-sources --mirror "${MIRROR:-}"
 
   # install software
-  chroot "$CHROOT" "$SELF_NAME" install-packages-base --bundles "${BUNDLES:-}"
+  chroot "$CHROOT" "$SELF_NAME" install-packages-base --bundles "${BUNDLES:-}" --bundles-file "${BUNDLES_FILE:-}"
 
   # do some modifications for desktop environments
   configure_desktop
@@ -1404,7 +1251,7 @@ function configure_network {
   fi
 
   # https://bugs.launchpad.net/ubuntu/+source/network-manager/+bug/1638842
-  if [[ ${BARRAY[*]} =~ 'desktop' ]]; then
+  if command -v nmcli &> /dev/null; then
 
     mkdir -p "$CHROOT/etc/NetworkManager/conf.d"
     touch "$CHROOT/etc/NetworkManager/conf.d/10-globally-managed-devices.conf"
@@ -1414,11 +1261,16 @@ function configure_network {
 
 function configure_desktop {
 
-  # only apply if desktop bundle is selected
-  if [[ ${BARRAY[*]} =~ 'desktop' ]]; then
+  # only apply if flatpak is installed
+  if command -v flatpak &> /dev/null; then
 
     # add flatpak remote: flathub
     chroot "$CHROOT" flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+
+  fi
+
+  # only apply if the gnome-shell is installed
+  if command -v gnome-shell &> /dev/null; then
 
     # modify default GNOME settings
     install_default_gnome_settings
@@ -1432,10 +1284,14 @@ function install_minimal_system {
   debootstrap --arch=amd64 "$CODENAME" "$CHROOT" 'http://archive.ubuntu.com/ubuntu'
 
   SBIN_DIR="$CHROOT/usr/local/sbin"
+  VAR_DIR="$CHROOT/var/local/ubuntu-headless-installer"
 
   # make this script available
   cp -f "$SELF_PATH" "$SBIN_DIR"
   chmod a+x "$SBIN_DIR/$SELF_NAME"
+
+  mkdir -p "$VAR_DIR"
+  cp -v "${BUNDLES_FILE:-"/var/local/ubuntu-headless-installer/bundles.txt"}" "$VAR_DIR"
 }
 
 function install_default_gnome_settings {
