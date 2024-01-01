@@ -12,10 +12,8 @@ function main {
   source "$SELF_DIR/test.env"
 
   if [[ $# -ne 2 ]]; then
-
     echo "$SELF_NAME: require arguments <task> <codename|ALL>" >&2
     exit 1
-
   fi
 
   TASK="$1"
@@ -34,21 +32,15 @@ function run_test_suite {
   before_all
 
   if [[ "$CODENAME" == "ALL" ]]; then
-
     for i in $(get_codenames); do
-
       before_each
       execute_installer "$i"
       after_each
-
     done
-
   else
-
     before_each
     execute_installer "$CODENAME"
     after_each
-
   fi
 
   after_all
@@ -118,15 +110,13 @@ function get_codenames {
       echo "$CURRENT_CODENAME"
     fi
 
-  done <<< "$VERSIONS_AVAILABLE"
+  done <<<"$VERSIONS_AVAILABLE"
 }
 
 function before_each {
 
   if [[ "$TASK" == "install-system" ]]; then
-
     mkfs.ext4 "$DEV_LOOP_HOME"
-
   fi
 
   echo "$SELF_NAME: begin installation (task: $TASK)"
@@ -143,22 +133,19 @@ function before_all {
 
     mkdir -p "$(dirname "$IMAGE")"
     dd "if=/dev/zero" "of=$IMAGE" bs=1G count=10
-    sfdisk "$IMAGE" < "$SELF_DIR/sfdisk.txt"
+    sfdisk "$IMAGE" <"$SELF_DIR/sfdisk.txt"
 
     DEV_LOOP_IMAGE="$(losetup --show --find --partscan "$IMAGE")"
     DEV_LOOP_SYSTEM="$DEV_LOOP_IMAGE""p1"
     DEV_LOOP_HOME="$DEV_LOOP_IMAGE""p2"
-
   fi
 }
 
 function after_all {
 
   if [[ "$TASK" == "install-system" ]]; then
-
     [[ -n "${DEV_LOOP_IMAGE:-}" ]] && losetup -d "$DEV_LOOP_IMAGE"
     [[ -f "$IMAGE" ]] && rm "$IMAGE"
-
   fi
 }
 
