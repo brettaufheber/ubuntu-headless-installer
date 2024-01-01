@@ -20,7 +20,7 @@ function main {
   #define long options
   LONG_OPTIONS='help,login,efi,separate-home'
   LONG_OPTIONS="$LONG_OPTIONS"',username:,hostname:,codename:,dev-root:,dev-home:,dev-boot:'
-  LONG_OPTIONS="$LONG_OPTIONS"',bundles:,bundles-file:,debconf-file:'
+  LONG_OPTIONS="$LONG_OPTIONS"',bundles:,bundles-file:,debconf-file:,dconf-file:'
   LONG_OPTIONS="$LONG_OPTIONS"',mirror:,locales:,time-zone:,user-gecos:,password:'
   LONG_OPTIONS="$LONG_OPTIONS"',keyboard-model:,keyboard-layout:,keyboard-variant:,keyboard-options:'
 
@@ -89,6 +89,10 @@ function main {
         ;;
       --debconf-file)
         DEBCONF_FILE="$2"
+        shift 2
+        ;;
+      --dconf-file)
+        DCONF_FILE="$2"
         shift 2
         ;;
       --mirror)
@@ -1315,123 +1319,20 @@ function install_minimal_system {
   mkdir -p "$VAR_DIR"
   cp -v "${BUNDLES_FILE:-"/var/local/ubuntu-headless-installer/bundles.txt"}" "$VAR_DIR"
   cp -v "${DEBCONF_FILE:-"/var/local/ubuntu-headless-installer/debconf.txt"}" "$VAR_DIR"
+  cp -v "${DCONF_FILE:-"/var/local/ubuntu-headless-installer/dconf.ini"}" "$VAR_DIR"
 }
 
 function install_default_gnome_settings {
+
+  local FILE
+
+  FILE="${DCONF_FILE:-"/var/local/ubuntu-headless-installer/dconf.ini"}"
 
   # create configuration directory
   mkdir -p "$CHROOT/etc/dconf/db/site.d/"
 
   # write default settings
-  echo '# changed default settings' > "$CHROOT/etc/dconf/db/site.d/defaults"
-  cat >> "$CHROOT/etc/dconf/db/site.d/defaults" << 'EOF'
-
-# set background
-
-[org/gnome/desktop/background]
-color-shading-type='solid'
-
-[org/gnome/desktop/background]
-picture-options='wallpaper'
-
-[org/gnome/desktop/background]
-picture-uri='file:////usr/share/gnome-control-center/pixmaps/noise-texture-light.png'
-
-[org/gnome/desktop/background]
-primary-color='#425265'
-
-[org/gnome/desktop/background]
-secondary-color='#425265'
-
-[org/gnome/desktop/screensaver]
-color-shading-type='solid'
-
-[org/gnome/desktop/screensaver]
-picture-options='wallpaper'
-
-[org/gnome/desktop/screensaver]
-picture-uri='file:////usr/share/gnome-control-center/pixmaps/noise-texture-light.png'
-
-[org/gnome/desktop/screensaver]
-primary-color='#425265'
-
-[org/gnome/desktop/screensaver]
-secondary-color='#425265'
-
-# set default theme
-
-[org/gnome/shell]
-enabled-extensions=['user-theme@gnome-shell-extensions.gcampax.github.com']
-
-[org/gnome/desktop/interface]
-cursor-theme='DMZ-Black'
-
-[org/gnome/desktop/interface]
-icon-theme='elementary'
-
-[org/gnome/desktop/interface]
-gtk-theme='Materia-light-compact'
-
-[org/gnome/shell/extensions/user-theme]
-name='Materia-light'
-
-# power saving options
-
-[org/gnome/desktop/session]
-idle-delay=uint32 0
-
-[org/gnome/settings-daemon/plugins/power]
-idle-dim=false
-
-[org/gnome/settings-daemon/plugins/power]
-sleep-inactive-battery-type='nothing'
-
-[org/gnome/settings-daemon/plugins/power]
-sleep-inactive-ac-type='nothing'
-
-[org/gnome/settings-daemon/plugins/power]
-power-button-action='suspend'
-
-# disable event sounds
-
-[org/gnome/desktop/sound]
-event-sounds=false
-
-# disable auto mount
-
-[org/gnome/desktop/media-handling]
-automount=false
-
-[org/gnome/desktop/media-handling]
-automount-open=false
-
-# modify user interface ("dconf watch /" helps to find the keys and values)
-
-[org/gnome/shell]
-disable-user-extensions=false
-
-[org/gnome/desktop/wm/preferences]
-button-layout='appmenu:minimize,maximize,close'
-
-[org/gnome/desktop/interface]
-show-battery-percentage=true
-
-[org/gnome/desktop/interface]
-clock-show-weekday=true
-
-[org/gnome/desktop/interface]
-clock-show-date=true
-
-[org/gnome/desktop/interface]
-clock-show-seconds=false
-
-[org/gnome/desktop/calendar]
-show-weekdate=true
-
-[org/gnome/mutter]
-dynamic-workspaces=true
-
-EOF
+  cp -v "$FILE" "$CHROOT/etc/dconf/db/site.d/defaults"
 
   # change dconf profile
   echo 'user-db:user' >> "$CHROOT/etc/dconf/profile/user"
