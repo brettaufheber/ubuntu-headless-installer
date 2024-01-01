@@ -107,6 +107,12 @@ sudo ubuntu-installer.sh install-system \
 |Use a separate home partition.
 |no
 
+|`&#8209;&#8209;copy&#8209;network&#8209;settings` +
+`&#8209;k`
+|
+|Allows copying network settings to the target medium. This is particularly useful for installations behind a proxy because it makes the network available out-of-the-box within the chroot environment.
+|no
+
 |`&#8209;&#8209;username&nbsp;<&nbsp;>` +
 `&#8209;u&nbsp;<&nbsp;>`
 |`USERNAME_NEW`

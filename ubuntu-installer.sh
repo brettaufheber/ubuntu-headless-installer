@@ -16,9 +16,10 @@ function main {
   SHELL_LOGIN=false
   USE_EFI=false
   USE_SEPARATE_HOME=false
+  COPY_NETWORK_SETTINGS=false
 
   #define long options
-  LONG_OPTIONS='help,login,efi,separate-home'
+  LONG_OPTIONS='help,login,efi,separate-home,copy-network-settings'
   LONG_OPTIONS="$LONG_OPTIONS"',username:,hostname:,codename:,dev-root:,dev-home:,dev-boot:'
   LONG_OPTIONS="$LONG_OPTIONS"',bundles:,bundles-file:,debconf-file:,dconf-file:'
   LONG_OPTIONS="$LONG_OPTIONS"',mirror:,locales:,time-zone:,user-gecos:,password:'
@@ -27,7 +28,7 @@ function main {
   # parse arguments
   OPTIONS_PARSED=$(
     getopt \
-      --options 'hlesu:n:c:x:y:z:b:' \
+      --options 'hlesku:n:c:x:y:z:b:' \
       --longoptions "$LONG_OPTIONS" \
       --name "$SELF_NAME" \
       -- "$@"
@@ -53,6 +54,10 @@ function main {
         ;;
       -s | --separate-home)
         USE_SEPARATE_HOME=true
+        shift 1
+        ;;
+      -k | --copy-network-settings)
+        COPY_NETWORK_SETTINGS=true
         shift 1
         ;;
       -u | --username)
@@ -1213,74 +1218,78 @@ function configure_users {
 
 function configure_network {
 
-  # set HTTP proxy
-  if [[ -n "${http_proxy:-}" ]]; then
+  if "$COPY_NETWORK_SETTINGS"; then
 
-    echo "http_proxy=$http_proxy" >> "$CHROOT/etc/environment"
-    echo "HTTP_PROXY=$http_proxy" >> "$CHROOT/etc/environment"
+    # set HTTP proxy
+    if [[ -n "${http_proxy:-}" ]]; then
 
-  fi
+      echo "http_proxy=$http_proxy" >> "$CHROOT/etc/environment"
+      echo "HTTP_PROXY=$http_proxy" >> "$CHROOT/etc/environment"
 
-  # set HTTPS proxy
-  if [[ -n "${https_proxy:-}" ]]; then
+    fi
 
-    echo "https_proxy=$https_proxy" >> "$CHROOT/etc/environment"
-    echo "HTTPS_PROXY=$https_proxy" >> "$CHROOT/etc/environment"
+    # set HTTPS proxy
+    if [[ -n "${https_proxy:-}" ]]; then
 
-  fi
+      echo "https_proxy=$https_proxy" >> "$CHROOT/etc/environment"
+      echo "HTTPS_PROXY=$https_proxy" >> "$CHROOT/etc/environment"
 
-  # set FTP proxy
-  if [[ -n "${ftp_proxy:-}" ]]; then
+    fi
 
-    echo "ftp_proxy=$ftp_proxy" >> "$CHROOT/etc/environment"
-    echo "FTP_PROXY=$ftp_proxy" >> "$CHROOT/etc/environment"
+    # set FTP proxy
+    if [[ -n "${ftp_proxy:-}" ]]; then
 
-  fi
+      echo "ftp_proxy=$ftp_proxy" >> "$CHROOT/etc/environment"
+      echo "FTP_PROXY=$ftp_proxy" >> "$CHROOT/etc/environment"
 
-  # set all socks proxy
-  if [[ -n "${all_proxy:-}" ]]; then
+    fi
 
-    echo "all_proxy=$all_proxy" >> "$CHROOT/etc/environment"
-    echo "ALL_PROXY=$all_proxy" >> "$CHROOT/etc/environment"
+    # set all socks proxy
+    if [[ -n "${all_proxy:-}" ]]; then
 
-  fi
+      echo "all_proxy=$all_proxy" >> "$CHROOT/etc/environment"
+      echo "ALL_PROXY=$all_proxy" >> "$CHROOT/etc/environment"
 
-  # set ignore-hosts
-  if [[ -n "${no_proxy:-}" ]]; then
+    fi
 
-    echo "no_proxy=$no_proxy" >> "$CHROOT/etc/environment"
-    echo "NO_PROXY=$no_proxy" >> "$CHROOT/etc/environment"
+    # set ignore-hosts
+    if [[ -n "${no_proxy:-}" ]]; then
 
-  fi
+      echo "no_proxy=$no_proxy" >> "$CHROOT/etc/environment"
+      echo "NO_PROXY=$no_proxy" >> "$CHROOT/etc/environment"
 
-  # copy DNS settings
-  if [[ -f '/etc/systemd/resolved.conf' ]]; then
+    fi
 
-    cp -f '/etc/systemd/resolved.conf' "$CHROOT/etc/systemd/resolved.conf"
+    # copy DNS settings
+    if [[ -f '/etc/systemd/resolved.conf' ]]; then
 
-  fi
+      cp -f '/etc/systemd/resolved.conf' "$CHROOT/etc/systemd/resolved.conf"
 
-  # copy connection settings (system without network-manager)
-  if [[ -d '/etc/netplan' ]]; then
+    fi
 
-    mkdir -p "$CHROOT/etc/netplan"
-    cp -rf '/etc/netplan/.' "$CHROOT/etc/netplan"
+    # copy connection settings (system without network-manager)
+    if [[ -d '/etc/netplan' ]]; then
 
-  fi
+      mkdir -p "$CHROOT/etc/netplan"
+      cp -rf '/etc/netplan/.' "$CHROOT/etc/netplan"
 
-  # copy connection settings (system with network-manager)
-  if [[ -d '/etc/NetworkManager/system-connections' ]]; then
+    fi
 
-    mkdir -p "$CHROOT/etc/NetworkManager/system-connections"
-    cp -rf '/etc/NetworkManager/system-connections/.' "$CHROOT/etc/NetworkManager/system-connections"
+    # copy connection settings (system with network-manager)
+    if [[ -d '/etc/NetworkManager/system-connections' ]]; then
 
-  fi
+      mkdir -p "$CHROOT/etc/NetworkManager/system-connections"
+      cp -rf '/etc/NetworkManager/system-connections/.' "$CHROOT/etc/NetworkManager/system-connections"
 
-  # https://bugs.launchpad.net/ubuntu/+source/network-manager/+bug/1638842
-  if command -v nmcli &> /dev/null; then
+    fi
 
-    mkdir -p "$CHROOT/etc/NetworkManager/conf.d"
-    touch "$CHROOT/etc/NetworkManager/conf.d/10-globally-managed-devices.conf"
+    # https://bugs.launchpad.net/ubuntu/+source/network-manager/+bug/1638842
+    if command -v nmcli &> /dev/null; then
+
+      mkdir -p "$CHROOT/etc/NetworkManager/conf.d"
+      touch "$CHROOT/etc/NetworkManager/conf.d/10-globally-managed-devices.conf"
+
+    fi
 
   fi
 }
