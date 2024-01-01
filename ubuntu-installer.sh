@@ -18,6 +18,9 @@ function main {
   USE_SEPARATE_HOME=false
   COPY_NETWORK_SETTINGS=false
 
+  # get settings from a dot-env file if available
+  [[ -f ".env" ]] && source ".env"
+
   #define long options
   LONG_OPTIONS='help,login,efi,separate-home,copy-network-settings'
   LONG_OPTIONS="$LONG_OPTIONS"',username:,hostname:,codename:,dev-root:,dev-home:,dev-boot:'
