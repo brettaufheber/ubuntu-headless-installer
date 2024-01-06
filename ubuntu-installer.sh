@@ -364,7 +364,6 @@ function task_manage_package_sources {
   # declare local variables
   local TRUSTED_GPG
   local SOURCES_LIST
-  local PREFERENCES
   local COMPONENTS
 
   # verify preconditions
@@ -373,7 +372,6 @@ function task_manage_package_sources {
   # set variables
   TRUSTED_GPG='/etc/apt/trusted.gpg.d'
   SOURCES_LIST='/etc/apt/sources.list.d'
-  PREFERENCES='/etc/apt/preferences.d'
   COMPONENTS='main universe multiverse restricted'
 
   # by default, use the whole Ubuntu mirror list
@@ -401,12 +399,6 @@ function task_manage_package_sources {
     gpg --no-default-keyring --keyring "gnupg-ring:$TRUSTED_GPG/google-chrome.gpg" --import
   chmod 644 "$TRUSTED_GPG/google-chrome.gpg"
   echo 'deb https://dl.google.com/linux/chrome/deb/ stable main' >"$SOURCES_LIST/google-chrome.list"
-
-  # add package sources for firefox
-  add-apt-repository -y ppa:mozillateam/ppa
-  echo 'Package: *' >"$PREFERENCES/mozilla-firefox"
-  echo 'Pin: release o=LP-PPA-mozillateam' >>"$PREFERENCES/mozilla-firefox"
-  echo 'Pin-Priority: 601' >>"$PREFERENCES/mozilla-firefox"
 
   # update package lists
   apt-get update
