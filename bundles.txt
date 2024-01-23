@@ -66,8 +66,8 @@ rubygems
 nodejs
 npm
 
-# install support for C# and Visual Basic (Mono environment)
-mono-complete mono-mcs mono-vbnc
+# install support for C# (Mono environment)
+mono-complete
 
 # install support for Go
 golang
