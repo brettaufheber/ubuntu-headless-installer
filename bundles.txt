@@ -78,7 +78,7 @@ rustc
 cargo
 
 # install support for Java, Scala and other JVM languages
-openjdk-11-jdk
+openjdk-%OPENJDK_VERSION%-jdk
 ant
 maven
 gradle
@@ -132,7 +132,7 @@ fonts-dejavu
 fonts-ubuntu fonts-ubuntu-console
 
 # install OpenJDK JRE
-openjdk-11-jre
+openjdk-%OPENJDK_VERSION%-jre
 
 # install audio recorder
 audacity

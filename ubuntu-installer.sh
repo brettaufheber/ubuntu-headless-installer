@@ -448,7 +448,7 @@ function task_install_packages_base {
   apt-get -y install snapd
 
   # install OpenJDK JRE (headless)
-  apt-get -y install openjdk-11-jre-headless
+  apt-get -y install "openjdk-$(find_openjdk_lts_versions | sort -rn | head -n 1)-jre-headless"
 
   # install everything else needed by a simple general purpose system
   aptitude -y install ~pstandard ~pimportant ~prequired
@@ -478,6 +478,7 @@ function install_bundles {
   local CATEGORY_MAIN
   local CATEGORY_SUB
   local SYSLANG
+  local OPENJDK_VERSION
   local INDEX
   local BARRAY
   local INSTALL_GRANTED
@@ -489,6 +490,8 @@ function install_bundles {
   source /etc/default/locale
   SYSLANG="$(echo "$LANG" | grep -oE '^([a-zA-Z]+)' | sed -r 's/^(C|POSIX)$/en/')"
   SYSLANG="${SYSLANG:-'en'}"
+
+  OPENJDK_VERSION="$(find_openjdk_lts_versions | sort -rn | head -n 1)"
 
   if [[ -z "${BUNDLES:-}" ]]; then
     # by default, use an empty array for bundle entries
@@ -509,6 +512,9 @@ function install_bundles {
 
     # substitute LANG placeholder
     LINE="${LINE//\%LANG\%/$SYSLANG}"
+
+    # substitute OPENJDK_VERSION placeholder
+    LINE="${LINE//\%OPENJDK_VERSION\%/$OPENJDK_VERSION}"
 
     # skip empty lines
     if [[ -z "$LINE" ]]; then
@@ -1262,6 +1268,28 @@ function stop_chroot_processes {
     if [[ "$(readlink $x)" =~ ^$CHROOT ]]; then
       kill -s TERM "$(basename "$(dirname "$x")")"
     fi
+  done
+}
+
+function find_openjdk_lts_versions {
+
+  local LTS_VERSIONS
+  local AVAILABLE_VERSIONS
+  local LTS_ARRAY
+  local AVAILABLE_ARRAY
+
+  LTS_VERSIONS=$(curl -s "https://api.adoptium.net/v3/info/available_releases" | jq -r '.available_lts_releases[]')
+  AVAILABLE_VERSIONS=$(apt-cache search openjdk | grep -oP '^openjdk-\K\d+(?=-jdk\s+)')
+
+  readarray -t LTS_ARRAY <<< "$LTS_VERSIONS"
+  readarray -t AVAILABLE_ARRAY <<< "$AVAILABLE_VERSIONS"
+
+  for LTS in "${LTS_ARRAY[@]}"; do
+    for AVAILABLE in "${AVAILABLE_ARRAY[@]}"; do
+      if [[ "$LTS" == "$AVAILABLE" ]]; then
+        echo "$LTS"
+      fi
+    done
   done
 }
 
