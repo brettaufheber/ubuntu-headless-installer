@@ -57,6 +57,7 @@ ghc
 # install support for Python
 python3
 python3-pip
+python3-venv
 python-is-python3
 
 # install support for Ruby
