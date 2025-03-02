@@ -282,7 +282,7 @@ function verify_codename {
 function verify_mounting_root {
 
   # the block device file for "/" must exist and be unmounted
-  if [[ -z "${DEV_ROOT:-}" ]] || [[ ! -b "${DEV_ROOT:-}" ]] || mount | grep -q "${DEV_ROOT:-}"; then
+  if [[ -z "${DEV_ROOT:-}" ]] || [[ ! -b "$DEV_ROOT" ]] || findmnt "$DEV_ROOT" &>/dev/null; then
     echo "$SELF_NAME: require unmounted device file for /" >&2
     exit 1
   fi
@@ -1300,10 +1300,8 @@ function find_openjdk_lts_versions {
 function mounting_step_1 {
 
   # declare local variables
+  local BOOT_PATH
   local HOME_PATH
-
-  # modify CLEANUP_MASK
-  CLEANUP_MASK=$(($CLEANUP_MASK | 1))
 
   # set path to mounting point
   CHROOT="/mnt/ubuntu-$(cat '/proc/sys/kernel/random/uuid')"
@@ -1312,28 +1310,24 @@ function mounting_step_1 {
   mkdir -p "$CHROOT"
   mount "$DEV_ROOT" "$CHROOT"
 
+  # mount $DEV_BOOT
   if "$USE_EFI"; then
-
-    # mount $DEV_BOOT
-    if mount | grep -q "$DEV_BOOT"; then
-      BOOT_PATH="$(df "$DEV_BOOT" | grep -oE '(/[[:alnum:]]+)+$' | head -1)"
-      mkdir -p "$CHROOT/boot/efi"
+     mkdir -p "$CHROOT/boot/efi"
+    if findmnt "$DEV_BOOT" &>/dev/null; then
+      BOOT_PATH="$(df "$DEV_BOOT" | awk 'NR==2 {print $6}')"
       mount -o bind "$BOOT_PATH" "$CHROOT/boot/efi"
     else
-      mkdir -p "$CHROOT/boot/efi"
       mount "$DEV_BOOT" "$CHROOT/boot/efi"
     fi
   fi
 
+  # mount $DEV_HOME
   if "$USE_SEPARATE_HOME"; then
-
-    # mount $DEV_HOME
-    if mount | grep -q "$DEV_HOME"; then
-      HOME_PATH="$(df "$DEV_HOME" | grep -oE '(/[[:alnum:]]+)+$' | head -1)"
-      mkdir -p "$CHROOT/home"
+    mkdir -p "$CHROOT/home"
+    if findmnt "$DEV_HOME" &>/dev/null; then
+      HOME_PATH="$(df "$DEV_HOME" | awk 'NR==2 {print $6}')"
       mount -o bind "$HOME_PATH" "$CHROOT/home"
     else
-      mkdir -p "$CHROOT/home"
       mount "$DEV_HOME" "$CHROOT/home"
     fi
   fi
@@ -1341,35 +1335,18 @@ function mounting_step_1 {
 
 function unmounting_step_1 {
 
-  # check whether the step is required or not
-  if [[ $(($CLEANUP_MASK & 1)) -ne 0 ]]; then
+  # prepare unmount
+  stop_chroot_processes
+  sync
 
-    # prepare unmount
-    stop_chroot_processes
-    sync
+  mountpoint -q "$CHROOT/boot/efi" && umount "$CHROOT/boot/efi"
+  mountpoint -q "$CHROOT/home" && umount "$CHROOT/home"
+  mountpoint -q "$CHROOT" && umount "$CHROOT"
 
-    if "$USE_EFI"; then
-      umount -l "$CHROOT/boot/efi"
-    fi
-
-    if "$USE_SEPARATE_HOME"; then
-      umount "$CHROOT/home"
-    fi
-
-    # unmount directory root
-    umount "$CHROOT"
-    rmdir "$CHROOT"
-
-  fi
+  rmdir "$CHROOT"
 }
 
 function mounting_step_2 {
-
-  # declare local variables
-  local BOOT_PATH
-
-  # modify CLEANUP_MASK
-  CLEANUP_MASK=$(($CLEANUP_MASK | 2))
 
   # flush the cache
   sync
@@ -1385,28 +1362,26 @@ function mounting_step_2 {
 
 function unmounting_step_2 {
 
-  # check whether the step is required or not
-  if [[ $(($CLEANUP_MASK & 2)) -ne 0 ]]; then
+  # prepare unmount
+  stop_chroot_processes
+  sync
 
-    # prepare unmount
-    stop_chroot_processes
-    sync
-
-    # unmount resources
-    umount -l "$CHROOT/tmp"
-    umount -l "$CHROOT/run"
-    umount -l "$CHROOT/dev/pts"
-    umount -l "$CHROOT/dev"
-    umount -l "$CHROOT/sys"
-    umount -l "$CHROOT/proc"
-  fi
+  # unmount resources
+  mountpoint -q "$CHROOT/tmp" && umount -l "$CHROOT/tmp"
+  mountpoint -q "$CHROOT/run" && umount -l "$CHROOT/run"
+  mountpoint -q "$CHROOT/dev/pts" && umount -l "$CHROOT/dev/pts"
+  mountpoint -q "$CHROOT/dev" && umount -l "$CHROOT/dev"
+  mountpoint -q "$CHROOT/sys" && umount -l "$CHROOT/sys"
+  mountpoint -q "$CHROOT/proc" && umount -l "$CHROOT/proc"
 }
 
 function error_trap {
 
   # cleanup
-  unmounting_step_2
-  unmounting_step_1
+  if [[ -n "$CHROOT" ]]; then
+    unmounting_step_2
+    unmounting_step_1
+  fi
 
   echo "$SELF_NAME: script stopped caused by unexpected return code $1 at line $2" >&2
   exit 3
@@ -1415,15 +1390,16 @@ function error_trap {
 function interrupt_trap {
 
   # cleanup
-  unmounting_step_2
-  unmounting_step_1
+  if [[ -n "$CHROOT" ]]; then
+    unmounting_step_2
+    unmounting_step_1
+  fi
 
   echo "$SELF_NAME: script interrupted by signal" >&2
   exit 2
 }
 
 set -euEo pipefail
-CLEANUP_MASK=0
 trap 'RC=$?; error_trap "$RC" "$LINENO"' ERR
 trap 'interrupt_trap' INT
 main "$@"
