@@ -423,6 +423,10 @@ function task_install_packages_base {
   apt-get -y install debconf-utils
   apt-get -y install aptitude
 
+  # install additional file system support
+  apt-get -y install zfsutils-linux
+  apt-get -y install btrfs-progs
+
   # install version control system
   apt-get -y install git
 
