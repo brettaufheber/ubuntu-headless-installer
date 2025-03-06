@@ -61,27 +61,32 @@ function task_install_script {
 
   # declare local variables
   local SBIN_DIR
-  local VAR_DIR
+  local INSTALL_DIR
+
   local ENTRY
 
   # verify preconditions
   verify_root_privileges
 
   SBIN_DIR='/usr/local/sbin'
-  VAR_DIR='/var/local/ubuntu-headless-installer'
+  INSTALL_DIR="/opt/ubuntu-headless-installer"
 
-  cp -v "$SELF_DIR/ubuntu-installer.sh" "$SBIN_DIR"
-  chmod a+x "$SBIN_DIR/ubuntu-installer.sh"
+  mkdir -p "$INSTALL_DIR"
+
+  cp -v "$SELF_DIR/ubuntu-installer.sh" "$INSTALL_DIR"
+  cp -rv "$SELF_DIR/helper-extras" "$INSTALL_DIR"
+  cp -rv "$SELF_DIR/etc" "$INSTALL_DIR"
+
+  chmod a+x "$INSTALL_DIR/ubuntu-installer.sh"
+  ln -sfn "$INSTALL_DIR/ubuntu-installer.sh" "$SBIN_DIR/ubuntu-installer"
 
   if "$WITH_HELPER_EXTRAS"; then
-    for ENTRY in "$SELF_DIR/helper-extras"/*; do
-      cp -v "$ENTRY" "$SBIN_DIR"
-      chmod a+x "$SBIN_DIR/$(basename "$ENTRY")"
+    for ENTRY in "$INSTALL_DIR/helper-extras"/*; do
+      [ -f "$ENTRY" ] || continue
+      chmod a+x "$ENTRY"
+      ln -sfn "$ENTRY" "$SBIN_DIR/$(basename "$ENTRY")"
     done
   fi
-
-  mkdir -p "$VAR_DIR"
-  cp -rv "$SELF_DIR/etc" "$VAR_DIR"
 }
 
 set -euo pipefail

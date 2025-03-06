@@ -468,7 +468,7 @@ function configure_debconf {
 
   local FILE
 
-  FILE="${DEBCONF_FILE:-"/var/local/ubuntu-headless-installer/etc/debconf.txt"}"
+  FILE="${DEBCONF_FILE:-"/opt/ubuntu-headless-installer/etc/debconf.txt"}"
 
   # set default values for packages
   debconf-set-selections "$FILE"
@@ -487,7 +487,7 @@ function install_bundles {
   local BARRAY
   local INSTALL_GRANTED
 
-  FILE="${BUNDLES_FILE:-"/var/local/ubuntu-headless-installer/etc/bundles.txt"}"
+  FILE="${BUNDLES_FILE:-"/opt/ubuntu-headless-installer/etc/bundles.txt"}"
   CATEGORY_PATTERN="^\[([a-z0-9_]+)(:([a-z0-9_]+))?\]$"
   INSTALL_GRANTED=false
 
@@ -1200,23 +1200,23 @@ function install_minimal_system {
   debootstrap --arch=amd64 "$CODENAME" "$CHROOT" 'http://archive.ubuntu.com/ubuntu'
 
   SBIN_DIR="$CHROOT/usr/local/sbin"
-  VAR_DIR="$CHROOT/var/local/ubuntu-headless-installer"
+  INSTALL_DIR="$CHROOT/opt/ubuntu-headless-installer"
 
   # make this script available
   cp -f "$SELF_PATH" "$SBIN_DIR"
   chmod a+x "$SBIN_DIR/$SELF_NAME"
 
-  mkdir -p "$VAR_DIR"
-  cp -v "${BUNDLES_FILE:-"/var/local/ubuntu-headless-installer/etc/bundles.txt"}" "$VAR_DIR"
-  cp -v "${DEBCONF_FILE:-"/var/local/ubuntu-headless-installer/etc/debconf.txt"}" "$VAR_DIR"
-  cp -v "${DCONF_FILE:-"/var/local/ubuntu-headless-installer/etc/dconf.ini"}" "$VAR_DIR"
+  mkdir -p "$INSTALL_DIR"
+  cp -v "${BUNDLES_FILE:-"/opt/ubuntu-headless-installer/etc/bundles.txt"}" "$INSTALL_DIR"
+  cp -v "${DEBCONF_FILE:-"/opt/ubuntu-headless-installer/etc/debconf.txt"}" "$INSTALL_DIR"
+  cp -v "${DCONF_FILE:-"/opt/ubuntu-headless-installer/etc/dconf.ini"}" "$INSTALL_DIR"
 }
 
 function install_default_gnome_settings {
 
   local FILE
 
-  FILE="${DCONF_FILE:-"/var/local/ubuntu-headless-installer/etc/dconf.ini"}"
+  FILE="${DCONF_FILE:-"/opt/ubuntu-headless-installer/etc/dconf.ini"}"
 
   # create configuration directory
   mkdir -p "$CHROOT/etc/dconf/db/site.d/"
