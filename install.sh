@@ -81,9 +81,7 @@ function task_install_script {
   fi
 
   mkdir -p "$VAR_DIR"
-  cp -v "$SELF_DIR/bundles.txt" "$VAR_DIR"
-  cp -v "$SELF_DIR/debconf.txt" "$VAR_DIR"
-  cp -v "$SELF_DIR/dconf.ini" "$VAR_DIR"
+  cp -rv "$SELF_DIR/etc" "$VAR_DIR"
 }
 
 set -euo pipefail
