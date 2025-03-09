@@ -795,14 +795,24 @@ function task_install_lxc_image {
 function task_install_docker_image {
 
   # declare local variables
+  local CONTAINER_CMD
   local TEMP_DIR
   local IMAGE_RELEASE
   local IMAGE_NAME
-  local CONTAINER_CMD
+  local IMAGE_LATEST
 
   # verify preconditions
   verify_root_privileges
   verify_codename
+
+  if command -v docker &>/dev/null; then
+    CONTAINER_CMD="docker"
+  elif command -v podman &>/dev/null; then
+    CONTAINER_CMD="podman"
+  else
+    echo "$SELF_NAME: missing container tooling" >&2
+    exit 1
+  fi
 
   # create temporary directory
   TEMP_DIR="$(mktemp -d)"
@@ -813,11 +823,10 @@ function task_install_docker_image {
   # create root directory
   mkdir -p "$CHROOT"
 
+  echo "$SELF_NAME: install the system temporarily in $CHROOT"
+
   # execute debootstrap
   install_minimal_system
-
-  # configuration before starting chroot
-  configure_users
 
   # mount OS resources into chroot environment
   mounting_step_2
@@ -839,9 +848,6 @@ function task_install_docker_image {
     --bundles-file "${BUNDLES_FILE:-}" \
     --debconf-file "${DEBCONF_FILE:-}"
 
-  # do some modifications for desktop environments
-  configure_desktop
-
   # remove retrieved package files
   chroot "$CHROOT" apt-get clean
 
@@ -851,18 +857,13 @@ function task_install_docker_image {
   # define image name
   IMAGE_RELEASE="$(cat '/proc/sys/kernel/random/uuid' | tr -dc '[:alnum:]')"
   IMAGE_NAME="custom/ubuntu:$CODENAME-$IMAGE_RELEASE"
-
-  if command -v docker &>/dev/null; then
-    CONTAINER_CMD="docker"
-  elif command -v podman &>/dev/null; then
-    CONTAINER_CMD="podman"
-  else
-    echo "$SELF_NAME: missing container tooling" >&2
-    exit 1
-  fi
+  IMAGE_LATEST="custom/ubuntu:latest"
 
   # install image
   tar -cC "$CHROOT" . | "$CONTAINER_CMD" import - "$IMAGE_NAME"
+
+  # tag the imported image as latest
+  "$CONTAINER_CMD" tag "$IMAGE_NAME" "$IMAGE_LATEST"
 
   # remove temporary directory
   rm -rf "$TEMP_DIR"
