@@ -695,6 +695,7 @@ function task_install_lxc_image {
   local TEMP_DIR
   local IMAGE_RELEASE
   local IMAGE_NAME
+  local IMAGE_LATEST
 
   # verify preconditions
   verify_root_privileges
@@ -708,6 +709,8 @@ function task_install_lxc_image {
 
   # create root directory
   mkdir -p "$CHROOT"
+
+  echo "$SELF_NAME: install the system temporarily in $CHROOT"
 
   # execute debootstrap
   install_minimal_system
@@ -746,7 +749,8 @@ function task_install_lxc_image {
 
   # define image name
   IMAGE_RELEASE="$(cat '/proc/sys/kernel/random/uuid' | tr -dc '[:alnum:]')"
-  IMAGE_NAME="custom-ubuntu/$CODENAME-$IMAGE_RELEASE"
+  IMAGE_NAME="custom/ubuntu:$CODENAME-$IMAGE_RELEASE"
+  IMAGE_LATEST="custom/ubuntu:latest"
 
   # create metadata file
   {
@@ -784,6 +788,12 @@ function task_install_lxc_image {
 
   # install image
   lxc image import "$TEMP_DIR/metadata.tar.gz" "$TEMP_DIR/rootfs.tar.gz" --alias "$IMAGE_NAME"
+
+  # retrieve the fingerprint of the newly imported image
+  IMAGE_FINGERPRINT="$(lxc image info "$IMAGE_NAME" --format='{{ .fingerprint }}')"
+
+  # add the 'latest' alias pointing to the same image
+  lxc image alias add "$IMAGE_LATEST" "$IMAGE_FINGERPRINT"
 
   # remove temporary directory
   rm -rf "$TEMP_DIR"
