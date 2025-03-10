@@ -1,9 +1,9 @@
 = Ubuntu Headless Installer
 
-Introducing the ultimate lightweight tool for installing Ubuntu Linux from the command line: A single Bash script that is only using debootstrap and chroot to get the job done.
+Introducing the ultimate lightweight tool for installing Ubuntu Linux from the command line: A Bash script that is only using debootstrap and chroot to get the job done.
 
-Because the installation does not require any user interaction if fully configured, this solution is ideal for an automatic server setup.
-Install Ubuntu directly on a free partition of the target hardware or create a USB live system and use it as a recovery solution.
+Because the installation does not require any user interaction if fully configured, this solution is ideal for realising an automated server setup.
+Install Ubuntu directly on free partitions of the target hardware or create a USB live system and use it as a recovery solution.
 
 What makes this installer special? +
 The installer is a headless tool, which means that no graphical user interface is required.
@@ -16,7 +16,7 @@ Download new versions from the Git repository: https://github.com/brettaufheber/
 
 The debootstrap tool which is required by the installer, might not be installed.
 
-[source]
+[source,bash]
 ----
 sudo apt-get install debootstrap
 ----
@@ -25,202 +25,260 @@ sudo apt-get install debootstrap
 
 This tool can be installed by calling the following command:
 
-[source]
+[source,bash]
 ----
 sudo ./install.sh
 ----
 
-=== Preparation: partitioning and formatting
+=== Tasks
 
-* Partitioning must be done before installation because the installer requires the system partition and home partition as block device files.
+Designed for flexibility, the installer supports direct installation on physical machines as well as virtual machines. Additionally, it provides support for generating LXC/LXD and Docker container images.
+
+==== install-system
+
+*Install Ubuntu on physical machines or virtual machines.*
+
+===== Preparation: partitioning and formatting
+
+* Partitioning must be done before installation because the installer requires the system partition and optionally the home partition and boot specific partitions as block device files.
 * The block device file for the system partition must be unmounted before starting the installer.
 * *The system partition is formatted during installation.*
 * The home partition is *not* formatted during installation to keep the user data.
+Also, the boot specific partitions are *not* formatted during installation.
+* If the home partition or boot specific partitions are already mounted, the installer will use a bind-mount to build the whole directory tree for an installation inside a chroot environment.
 In case of a new home partition, formatting must be done manually.
-
-=== Install Ubuntu
 
 Before installation, it must be clear which boot mode is used for the target hardware.
 Most computers nowadays use the UEFI (Unified Extensible Firmware Interface) standard but often support the legacy BIOS (Basic Input/Output System) what can be enabled in the boot settings.
 Both firmware interfaces are supported by the installer.
 
-==== UEFI boot mode
+===== Examples
 
-[source]
+.Example installation for UEFI boot mode
+[source,bash]
 ----
-sudo ubuntu-installer.sh install-system \
-  ‑‑efi \
-  ‑‑separate‑home \
-  -u <your username> \
+sudo ubuntu-installer install-system \
+  -c <Ubuntu codename: bionic|focal|jammy|noble|...> \
   -n <hostname> \
-  -c <Ubuntu codename: bionic|cosmic|...> \
-  -x <block device file for system partition "/": /dev/...> \
-  -y <block device file for home partition "/home": /dev/...> \
-  -z <block device file for EFI partition "/boot/efi": /dev/...>
-----
-
-==== Legacy BIOS boot mode
-
-[source]
-----
-sudo ubuntu-installer.sh install-system \
-  ‑‑separate‑home \
   -u <your username> \
-  -n <hostname> \
-  -c <Ubuntu codename: bionic|cosmic|...> \
-  -x <block device file for system partition "/": /dev/...> \
-  -y <block device file for home partition "/home": /dev/...> \
-  -z <block device file of the whole disk: /dev/...>
+  --dev-root "/dev/nvme0n1p2" \
+  --dev-boot-efi "/dev/nvme0n1p1" \
+  --dev-home "/dev/nvme0n1p3"
 ----
 
-=== Parameters for the installation task
+.Example installation for legacy BIOS boot mode
+[source,bash]
+----
+sudo ubuntu-installer install-system \
+  -c <Ubuntu codename: bionic|focal|jammy|noble|...> \
+  -n <hostname> \
+  -u <your username> \
+  --dev-root "/dev/sda1" \
+  --dev-home "/dev/sda2" \
+  --dev-mbr-legacy "/dev/sda"
+----
 
-[cols="7,7,15,1",options="header"]
+=== Overview parameters and variables
+
+[cols="7,9,16",options="header"]
 |===
 
-|command line parameter
-|environment variable
+|command line parameter / environment variable
+|used in this tasks
 |description
-|required
 
 |`&#8209;&#8209;help` +
 `&#8209;h`
-|
+a|
+* install-system
+* build-lxc-image
+* build-docker-image
 |If enabled the help text is shown and other arguments are ignored.
-|no
 
-|`&#8209;&#8209;login` +
+|`&#8209;&#8209;shell&#8209;login` +
 `&#8209;l`
-|
+a|
+* install-system
 |This option allows logging into the shell for diagnostic purposes directly at the end of the installation.
-|no
-
-|`&#8209;&#8209;efi` +
-`&#8209;e`
-|
-|Switch between UEFI boot mode and legacy BIOS boot mode. Default is legacy mode.
-|no
-
-|`&#8209;&#8209;separate&#8209;home` +
-`&#8209;s`
-|
-|Use a separate home partition.
-|no
 
 |`&#8209;&#8209;copy&#8209;network&#8209;settings` +
 `&#8209;k`
-|
-|Allows copying network settings to the target medium. This is particularly useful for installations behind a proxy because it makes the network available out-of-the-box within the chroot environment.
-|no
-
-|`&#8209;&#8209;username&nbsp;<&nbsp;>` +
-`&#8209;u&nbsp;<&nbsp;>`
-|`USERNAME_NEW`
-|The username for the first user of the system to be created. If unspecified the username of the current shell session is used.
-|no
-
-|`&#8209;&#8209;hostname&nbsp;<&nbsp;>` +
-`&#8209;n&nbsp;<&nbsp;>`
-|`HOSTNAME_NEW`
-|The hostname of the system to be created. If unspecified the hostname of the running system is used.
-|no
+a|
+* install-system
+|Allows copying network settings from the currently used system to the target medium. This is particularly useful for installations behind a proxy because it makes the network available out-of-the-box within the chroot environment.
 
 |`&#8209;&#8209;codename&nbsp;<&nbsp;>` +
-`&#8209;c&nbsp;<&nbsp;>`
-|`CODENAME`
-|The first word of an Ubuntu codename in lowercase must be defined to refer to a specific Ubuntu version. See https://wiki.ubuntu.com/Releases[here] to choose from available releases.
-|yes
+`&#8209;c&nbsp;<&nbsp;>` +
+ +
+`CODENAME`
+a|
+* install-system
+* build-lxc-image
+* build-docker-image
+|The first word of an Ubuntu codename in lowercase must be defined to refer to a specific Ubuntu version. See https://wiki.ubuntu.com/Releases[here] to choose from available releases. +
+*Required*: yes
+
+|`&#8209;&#8209;hostname&#8209;new&nbsp;<&nbsp;>` +
+`&#8209;n&nbsp;<&nbsp;>` +
+ +
+`HOSTNAME_NEW`
+a|
+* install-system
+|The hostname of the system to be created. If unspecified the hostname of the running system is used. +
+*Default*: The hostname of the running system
+
+|`&#8209;&#8209;username&#8209;new&nbsp;<&nbsp;>` +
+`&#8209;u&nbsp;<&nbsp;>` +
+ +
+`USERNAME_NEW`
+a|
+* install-system
+|The username for the first user of the system to be created. If unspecified the username of the current shell session is used. +
+*Default*: The name of the current user
+
+|`&#8209;&#8209;mirror&nbsp;<&nbsp;>` +
+ +
+`MIRROR`
+a|
+* install-system
+* build-lxc-image
+* build-docker-image
+|The mirror used to resolve software packages. +
+*Default*: http://archive.ubuntu.com/ubuntu
 
 |`&#8209;&#8209;dev&#8209;root&nbsp;<&nbsp;>` +
-`&#8209;x&nbsp;<&nbsp;>`
-|`DEV_ROOT`
-|The path to the block device file of the system partition must be specified. This block device file must be unmounted during installation.
-|yes
+ +
+`DEV_ROOT`
+a|
+* install-system
+|The path to the block device file of the system partition must be specified. This block device file must be unmounted during installation. See https://wiki.archlinux.org/title/Device_file#Block_device_names[here] for more information about device file names. +
+*Required*: yes
+
+|`&#8209;&#8209;dev&#8209;boot&#8209;efi&nbsp;<&nbsp;>` +
+ +
+`DEV_BOOT_EFI`
+a|
+* install-system
+|To enable EFI boot, the path to the block device file of the EFI partition must be specified. It does not matter whether the EFI partition is mounted during installation.
 
 |`&#8209;&#8209;dev&#8209;home&nbsp;<&nbsp;>` +
-`&#8209;y&nbsp;<&nbsp;>`
-|`DEV_HOME`
-|The path to the block device file of the home partition must be specified. It does not matter whether the partition is mounted during installation.
-|only if a separate home partition is used
+ +
+`DEV_HOME`
+a|
+* install-system
+|To use a separate home partition, the path to the block device file of the home partition must be specified. It does not matter whether the home partition is mounted during installation.
 
-|`&#8209;&#8209;dev&#8209;boot&nbsp;<&nbsp;>` +
-`&#8209;z&nbsp;<&nbsp;>`
-|`DEV_BOOT`
-|If the EFI option is enabled, the path to the block device file of the EFI partition must be specified. If the legacy boot is used the path to the block device file for the whole disk must be specified. See https://wiki.archlinux.org/title/Device_file#Block_device_names[here] for more information about device file names. It does not matter whether the partition is mounted during installation.
-|yes
+|`&#8209;&#8209;dev&#8209;mbr&#8209;legacy&nbsp;<&nbsp;>` +
+ +
+`DEV_MBR_LEGACY`
+a|
+* install-system
+|To enable the legacy boot, the path to the block device file for the whole disk must be specified to address the master boot record (MBR).
+
+|`&#8209;&#8209;tmp&#8209;size&nbsp;<&nbsp;>` +
+ +
+`TMP_SIZE`
+a|
+* install-system
+|Used inside the fstab file to specify the size of the in-memory `/tmp` directory. +
+*Default*: 40% (of the available RAM)
 
 |`&#8209;&#8209;bundles&nbsp;<&nbsp;>` +
-`&#8209;b&nbsp;<&nbsp;>`
-|`BUNDLES`
+ +
+`BUNDLES`
+a|
+* install-system
+* build-lxc-image
+* build-docker-image
 |An optional comma separated list that allows installing additional software. See the topic "Software bundles" below.
-|no
 
-|`&#8209;&#8209;bundles&#8209;file&nbsp;<&nbsp;>`
-|`BUNDLES_FILE`
-|The path to an optional file that contains information about bundles and packages.
-|no
+|`&#8209;&#8209;bundles&#8209;file&nbsp;<&nbsp;>` +
+ +
+`BUNDLES_FILE`
+a|
+* install-system
+* build-lxc-image
+* build-docker-image
+|The path to an optional file that contains information about bundles and related packages.
 
-|`&#8209;&#8209;debconf&#8209;file&nbsp;<&nbsp;>`
-|`DEBCONF_FILE`
+|`&#8209;&#8209;debconf&#8209;file&nbsp;<&nbsp;>` +
+ +
+`DEBCONF_FILE`
+a|
+* install-system
+* build-lxc-image
+* build-docker-image
 |The path to an optional file that allows to pre-seed the debconf database.
-|no
 
-|`&#8209;&#8209;dconf&#8209;file&nbsp;<&nbsp;>`
-|`DCONF_FILE`
+|`&#8209;&#8209;dconf&#8209;file&nbsp;<&nbsp;>` +
+ +
+`DCONF_FILE`
+a|
+* install-system
 |The path to an optional file that overwrites the GNOME dconf defaults.
-|no
 
-|`&#8209;&#8209;mirror&nbsp;<&nbsp;>`
-|`MIRROR`
-|The mirror used to resolve software packages. Default is "mirror://mirrors.ubuntu.com/mirrors.txt"
-|no, but recommended
-
-|`&#8209;&#8209;locales&nbsp;<&nbsp;>`
-|`LOCALES`
+|`&#8209;&#8209;locales&nbsp;<&nbsp;>` +
+ +
+`LOCALES`
+a|
+* install-system
 |The locales (e.g. _C.UTF-8_, _en_US.UTF-8_, _de_DE.UTF-8_) of the system to be created. If unspecified the installer will ask interactively.
-|no
 
-|`&#8209;&#8209;time&#8209;zone&nbsp;<&nbsp;>`
-|`TZ`
+|`&#8209;&#8209;time&#8209;zone&nbsp;<&nbsp;>` +
+ +
+`TIME_ZONE`
+a|
+* install-system
 |The time zone (e.g. _UTC_, _Europe/Berlin_) of the system to be created. If unspecified the installer will ask interactively.
-|no
 
-|`&#8209;&#8209;user&#8209;gecos&nbsp;<&nbsp;>`
-|`USER_GECOS`
+|`&#8209;&#8209;user&#8209;gecos&nbsp;<&nbsp;>` +
+ +
+`USER_GECOS`
+a|
+* install-system
 |Additional GECOS information for the first user of the system to be created.
-|no
 
-|`&#8209;&#8209;password&nbsp;<&nbsp;>`
-|`PASSWORD`
+|`&#8209;&#8209;password&nbsp;<&nbsp;>` +
+ +
+`PASSWORD`
+a|
+* install-system
 |The password for the first user of the system to be created. If unspecified the installer will ask interactively.
-|no
 
-|`&#8209;&#8209;keyboard&#8209;model&nbsp;<&nbsp;>`
-|`XKBMODEL`
+|`&#8209;&#8209;keyboard&#8209;model&nbsp;<&nbsp;>` +
+ +
+`KEYBOARD_MODEL`
+a|
+* install-system
 |The keyboard model. If unspecified the installer will ask interactively. See file "/etc/default/keyboard" of another system to find matching values.
-|no
 
-|`&#8209;&#8209;keyboard&#8209;layout&nbsp;<&nbsp;>`
-|`XKBLAYOUT`
+|`&#8209;&#8209;keyboard&#8209;layout&nbsp;<&nbsp;>` +
+ +
+`KEYBOARD_LAYOUT`
+a|
+* install-system
 |The keyboard layout. If unspecified the installer will ask interactively. See file "/etc/default/keyboard" of another system to find matching values.
-|no
 
-|`&#8209;&#8209;keyboard&#8209;variant&nbsp;<&nbsp;>`
-|`XKBVARIANT`
+|`&#8209;&#8209;keyboard&#8209;variant&nbsp;<&nbsp;>` +
+ +
+`KEYBOARD_VARIANT`
+a|
+* install-system
 |The keyboard variant. If unspecified the installer will ask interactively. See file "/etc/default/keyboard" of another system to find matching values.
-|no
 
-|`&#8209;&#8209;keyboard&#8209;options&nbsp;<&nbsp;>`
-|`XKBOPTIONS`
+|`&#8209;&#8209;keyboard&#8209;options&nbsp;<&nbsp;>` +
+ +
+`KEYBOARD_OPTIONS`
+a|
+* install-system
 |The keyboard options. If unspecified the installer will ask interactively. See file "/etc/default/keyboard" of another system to find matching values.
-|no
 
 |===
 
 === Software bundles
 
 Optionally, bundles (collection of software packages) can be installed together with the system.
-See the code to get an overview of the used packages.
+See the configuration files to get an overview of the used packages.
 
 * net: network tooling
 * virt: QEMU/KVM with tooling
@@ -228,11 +286,6 @@ See the code to get an overview of the used packages.
 * desktop: minimal GNOME desktop
 * laptop: power saving tools for mobile devices
 * x86: architecture specific tools and libraries (requires dev)
-
-== Other features
-
-The installer is able to create Docker container images and Linux containers.
-See the code to learn more about these features.
 
 == License
 
