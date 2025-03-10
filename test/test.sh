@@ -54,24 +54,38 @@ function execute_installer {
 
   echo "$SELF_NAME: installation with codename $CODENAME"
 
-  ./ubuntu-installer.sh "$TASK" \
-    --separate-home \
-    --username "$TEST_USERNAME" \
-    --hostname "$TEST_HOSTNAME" \
-    --codename "$CODENAME" \
-    --bundles "$TEST_BUNDLES" \
-    --dev-root "${DEV_LOOP_SYSTEM:-}" \
-    --dev-home "${DEV_LOOP_HOME:-}" \
-    --dev-boot "${DEV_LOOP_IMAGE:-}" \
-    --mirror "$TEST_MIRROR" \
-    --locales "$TEST_LOCALES" \
-    --time-zone "$TEST_TZ" \
-    --user-gecos "$TEST_USER_GECOS" \
-    --password "$TEST_PASSWORD" \
-    --keyboard-model "$TEST_XKBMODEL" \
-    --keyboard-layout "$TEST_XKBLAYOUT" \
-    --keyboard-variant "$TEST_XKBVARIANT" \
-    --keyboard-options "$TEST_XKBOPTIONS"
+  if [[ "$TASK" == "install-system" ]]; then
+    ubuntu-installer install-system \
+      --codename "$CODENAME" \
+      --hostname-new "$TEST_HOSTNAME" \
+      --username-new "$TEST_USERNAME" \
+      --mirror "$TEST_MIRROR" \
+      --dev-root "${DEV_LOOP_SYSTEM:-}" \
+      --dev-home "${DEV_LOOP_HOME:-}" \
+      --dev-mbr-legacy "${DEV_LOOP_IMAGE:-}" \
+      --bundles "$TEST_BUNDLES" \
+      --locales "$TEST_LOCALES" \
+      --time-zone "$TEST_TZ" \
+      --user-gecos "$TEST_USER_GECOS" \
+      --password "$TEST_PASSWORD" \
+      --keyboard-model "$TEST_KEYBOARD_MODEL" \
+      --keyboard-layout "$TEST_KEYBOARD_LAYOUT" \
+      --keyboard-variant "$TEST_KEYBOARD_VARIANT" \
+      --keyboard-options "$TEST_KEYBOARD_OPTIONS"
+  elif [[ "$TASK" == "build-lxc-image" ]]; then
+    ubuntu-installer build-lxc-image \
+      --codename "$CODENAME" \
+      --mirror "$TEST_MIRROR" \
+      --bundles "$TEST_BUNDLES"
+  elif [[ "$TASK" == "build-docker-image" ]]; then
+    ubuntu-installer build-docker-image \
+      --codename "$CODENAME" \
+      --mirror "$TEST_MIRROR" \
+      --bundles "$TEST_BUNDLES"
+  else
+    echo "$SELF_NAME: task $TASK is not covered by testing" >&2
+    exit 1
+  fi
 }
 
 function get_codenames {

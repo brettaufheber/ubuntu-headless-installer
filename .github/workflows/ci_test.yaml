@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout project
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Install missing packages
         run: sudo apt-get --no-install-recommends --yes install debootstrap
       - name: Install script
@@ -28,22 +28,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout project
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Install missing packages
         run: sudo apt-get --no-install-recommends --yes install debootstrap
       - name: Install script
         run: sudo ./install.sh
       - name: Execute test
-        run: sudo ./test/test.sh install-lxc-image ALL
+        run: sudo ./test/test.sh build-lxc-image ALL
 
   test-docker-image-install:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout project
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Install missing packages
         run: sudo apt-get --no-install-recommends --yes install debootstrap
       - name: Install script
         run: sudo ./install.sh
       - name: Execute test
-        run: sudo ./test/test.sh install-docker-image ALL
+        run: sudo ./test/test.sh build-docker-image ALL
