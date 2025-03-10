@@ -343,20 +343,42 @@ function task_create_user {
 
 function task_modify_user {
 
+  local EXTRA_GROUPS
+
   # verify preconditions
   verify_root_privileges
   verify_username
   verify_username_exists true
 
-  # create home-directory if not exist
-  mkhomedir_helper "$USERNAME_NEW"
+  # get the extra groups
+  EXTRA_GROUPS="$(grep '^EXTRA_GROUPS=' /etc/adduser.conf | cut -d '=' -f2 | tr -d '"')"
+
+  # change username if required
+  if [[ -n "${USERNAME_OLD:-}" && "$USERNAME_OLD" != "$USERNAME_NEW" ]]; then
+    usermod -l "$USERNAME_NEW" -d "/home/$USERNAME_NEW" -m "$USERNAME_OLD"
+  fi
 
   # add user to extra groups
-  for i in $EXTRA_GROUPS; do
-    if grep -qE "^$i:" /etc/group; then
-      usermod -aG "$i" "$USERNAME_NEW"
+  for CURRENT_GROUP in $EXTRA_GROUPS; do
+    if grep -qE "^$CURRENT_GROUP:" /etc/group; then
+      usermod -aG "$CURRENT_GROUP" "$USERNAME_NEW"
     fi
   done
+
+  # set GECOS for the user
+  if [[ -n "${USER_GECOS:-}" ]]; then
+    usermod -c "$USER_GECOS" "$USERNAME_NEW"
+  fi
+
+  # set user password
+  if [[ -n "${PASSWORD:-}" ]]; then
+    usermod --password "$(openssl passwd -6 "$PASSWORD")" "$USERNAME_NEW"
+  else
+    passwd "$USERNAME_NEW"
+  fi
+
+  # create home-directory if not exist
+  mkhomedir_helper "$USERNAME_NEW"
 }
 
 function task_manage_package_sources {
