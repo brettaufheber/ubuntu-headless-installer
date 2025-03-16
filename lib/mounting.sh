@@ -13,11 +13,13 @@ function mount_devices {
 
   local DEV_ROOT
   local DEV_BOOT_EFI
+  local DEV_BOOT_FIRMWARE
   local DEV_HOME
 
   DEV_ROOT="$1"
   DEV_BOOT_EFI="$2"
-  DEV_HOME="$3"
+  DEV_BOOT_FIRMWARE="$3"
+  DEV_HOME="$4"
 
   # mount system partition
   mkdir -p "$CHROOT"
@@ -25,6 +27,7 @@ function mount_devices {
 
   # mount the other partitions
   mount_extended "$DEV_BOOT_EFI" "$CHROOT/boot/efi"
+  mount_extended "$DEV_BOOT_FIRMWARE" "$CHROOT/boot/firmware"
   mount_extended "$DEV_HOME" "$CHROOT/home"
 }
 
@@ -50,6 +53,7 @@ function unmount_devices {
 
   # unmount partitions
   mountpoint -q "$CHROOT/boot/efi" && umount "$CHROOT/boot/efi"
+  mountpoint -q "$CHROOT/boot/firmware" && umount "$CHROOT/boot/firmware"
   mountpoint -q "$CHROOT/home" && umount "$CHROOT/home"
   mountpoint -q "$CHROOT" && umount "$CHROOT"
 
