@@ -5,18 +5,22 @@ function configure_fstab {
   # declare local variables
   local DEV_ROOT
   local DEV_BOOT_EFI
+  local DEV_BOOT_FIRMWARE
   local DEV_HOME
   local FILE
   local FILE_BOOT_EFI
+  local FILE_BOOT_FIRMWARE
   local FILE_HOME
   local UUID_ROOT
   local UUID_BOOT_EFI
+  local UUID_BOOT_FIRMWARE
   local UUID_HOME
 
   DEV_ROOT="$1"
   DEV_BOOT_EFI="$2"
-  DEV_HOME="$3"
-  TMP_SIZE="$4"
+  DEV_BOOT_FIRMWARE="$3"
+  DEV_HOME="$4"
+  TMP_SIZE="$5"
 
   # handle root partition
   FILE="$CHROOT/etc/fstab"
@@ -29,6 +33,15 @@ function configure_fstab {
   else
     FILE_BOOT_EFI="/dev/null"  # discard EFI specific entry
     UUID_BOOT_EFI=""
+  fi
+
+  # handle firmware partition
+  if [[ -b "$DEV_BOOT_FIRMWARE" ]]; then
+    FILE_BOOT_FIRMWARE="$FILE"
+    UUID_BOOT_FIRMWARE="$(blkid -s UUID -o value "$DEV_BOOT_FIRMWARE")"
+  else
+    FILE_BOOT_FIRMWARE="/dev/null" # discard firmware specific entry
+    UUID_BOOT_FIRMWARE=""
   fi
 
   # handle home partition
@@ -45,13 +58,14 @@ function configure_fstab {
   fi
 
   # edit /etc/fstab
-  echo '# <file system>       <mount point>     <type>    <options>                       <dump> <pass>' > "$FILE"
-  echo "UUID=$UUID_ROOT       /                 ext4      defaults,errors=remount-ro      0      1" >> "$FILE"
-  echo "UUID=$UUID_BOOT_EFI   /boot/efi         vfat      defaults                        0      2" >> "$FILE_BOOT_EFI"
-  echo "UUID=$UUID_HOME       /home             ext4      defaults                        0      2" >> "$FILE_HOME"
-  echo "proc                  /proc             proc      defaults                        0      0" >> "$FILE"
-  echo "sys                   /sys              sysfs     defaults                        0      0" >> "$FILE"
-  echo "tmpfs                 /tmp              tmpfs     defaults,size=$TMP_SIZE         0      0" >> "$FILE"
+  echo '# <file system>           <mount point>     <type>    <options>                       <dump> <pass>' > "$FILE"
+  echo "UUID=$UUID_ROOT           /                 ext4      defaults,errors=remount-ro      0      1" >> "$FILE"
+  echo "UUID=$UUID_BOOT_EFI       /boot/efi         vfat      defaults                        0      2" >> "$FILE_BOOT_EFI"
+  echo "UUID=$UUID_BOOT_FIRMWARE  /boot/firmware    vfat      defaults                        0      2" >> "$FILE_BOOT_FIRMWARE"
+  echo "UUID=$UUID_HOME           /home             ext4      defaults                        0      2" >> "$FILE_HOME"
+  echo "proc                      /proc             proc      defaults                        0      0" >> "$FILE"
+  echo "sys                       /sys              sysfs     defaults                        0      0" >> "$FILE"
+  echo "tmpfs                     /tmp              tmpfs     defaults,size=$TMP_SIZE         0      0" >> "$FILE"
 }
 
 function copy_network_settings {

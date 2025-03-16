@@ -78,6 +78,30 @@ sudo ubuntu-installer install-system \
   --dev-mbr-legacy "/dev/sda"
 ----
 
+==== install-system-raspi-lts
+
+This task allows installation on a Raspberry Pi. Unlike the other tasks, which work via debootstrap, this one uses an official image to migrate all hardware-specific customizations.
+
+At the moment only LTS versions of Ubuntu are supported for installation on the Raspberry Pi.
+
+===== Preparation: partitioning and formatting
+
+Please note the instructions from the install-system task.
+
+===== Examples
+
+.Example installation
+[source,bash]
+----
+sudo ubuntu-installer install-system-raspi-lts \
+  -c <Ubuntu codename: bionic|focal|jammy|noble|...> \
+  -n <hostname> \
+  -u <your username> \
+  --dev-root "/dev/sda2" \
+  --dev-boot-firmware "/sda1" \
+  --dev-home "/dev/sda3"
+----
+
 === Overview parameters and variables
 
 [cols="7,9,16",options="header"]
@@ -91,6 +115,7 @@ sudo ubuntu-installer install-system \
 `&#8209;h`
 a|
 * install-system
+* install-system-raspi-lts
 * build-lxc-image
 * build-docker-image
 |If enabled the help text is shown and other arguments are ignored.
@@ -99,12 +124,14 @@ a|
 `&#8209;l`
 a|
 * install-system
+* install-system-raspi-lts
 |This option allows logging into the shell for diagnostic purposes directly at the end of the installation.
 
 |`&#8209;&#8209;copy&#8209;network&#8209;settings` +
 `&#8209;k`
 a|
 * install-system
+* install-system-raspi-lts
 |Allows copying network settings from the currently used system to the target medium. This is particularly useful for installations behind a proxy because it makes the network available out-of-the-box within the chroot environment.
 
 |`&#8209;&#8209;codename&nbsp;<&nbsp;>` +
@@ -113,6 +140,7 @@ a|
 `CODENAME`
 a|
 * install-system
+* install-system-raspi-lts
 * build-lxc-image
 * build-docker-image
 |The first word of an Ubuntu codename in lowercase must be defined to refer to a specific Ubuntu version. See https://wiki.ubuntu.com/Releases[here] to choose from available releases. +
@@ -124,6 +152,7 @@ a|
 `HOSTNAME_NEW`
 a|
 * install-system
+* install-system-raspi-lts
 |The hostname of the system to be created. If unspecified the hostname of the running system is used. +
 *Default*: The hostname of the running system
 
@@ -133,6 +162,7 @@ a|
 `USERNAME_NEW`
 a|
 * install-system
+* install-system-raspi-lts
 |The username for the first user of the system to be created. If unspecified the username of the current shell session is used. +
 *Default*: The name of the current user
 
@@ -141,6 +171,7 @@ a|
 `MIRROR`
 a|
 * install-system
+* install-system-raspi-lts
 * build-lxc-image
 * build-docker-image
 |The mirror used to resolve software packages. +
@@ -151,6 +182,7 @@ a|
 `DEV_ROOT`
 a|
 * install-system
+* install-system-raspi-lts
 |The path to the block device file of the system partition must be specified. This block device file must be unmounted during installation. See https://wiki.archlinux.org/title/Device_file#Block_device_names[here] for more information about device file names. +
 *Required*: yes
 
@@ -161,11 +193,19 @@ a|
 * install-system
 |To enable EFI boot, the path to the block device file of the EFI partition must be specified. It does not matter whether the EFI partition is mounted during installation.
 
+|`&#8209;&#8209;dev&#8209;boot&#8209;firmware&nbsp;<&nbsp;>` +
+ +
+`DEV_BOOT_FIRMWARE`
+a|
+* install-system-raspi-lts
+|The firmware partition used by the Raspberry Pi should be specified as block device file, required to have a bootable system.
+
 |`&#8209;&#8209;dev&#8209;home&nbsp;<&nbsp;>` +
  +
 `DEV_HOME`
 a|
 * install-system
+* install-system-raspi-lts
 |To use a separate home partition, the path to the block device file of the home partition must be specified. It does not matter whether the home partition is mounted during installation.
 
 |`&#8209;&#8209;dev&#8209;mbr&#8209;legacy&nbsp;<&nbsp;>` +
@@ -180,6 +220,7 @@ a|
 `TMP_SIZE`
 a|
 * install-system
+* install-system-raspi-lts
 |Used inside the fstab file to specify the size of the in-memory `/tmp` directory. +
 *Default*: 40% (of the available RAM)
 
@@ -188,6 +229,7 @@ a|
 `BUNDLES`
 a|
 * install-system
+* install-system-raspi-lts
 * build-lxc-image
 * build-docker-image
 |An optional comma separated list that allows installing additional software. See the topic "Software bundles" below.
@@ -197,6 +239,7 @@ a|
 `BUNDLES_FILE`
 a|
 * install-system
+* install-system-raspi-lts
 * build-lxc-image
 * build-docker-image
 |The path to an optional file that contains information about bundles and related packages.
@@ -206,6 +249,7 @@ a|
 `DEBCONF_FILE`
 a|
 * install-system
+* install-system-raspi-lts
 * build-lxc-image
 * build-docker-image
 |The path to an optional file that allows to pre-seed the debconf database.
@@ -215,6 +259,7 @@ a|
 `DCONF_FILE`
 a|
 * install-system
+* install-system-raspi-lts
 |The path to an optional file that overwrites the GNOME dconf defaults.
 
 |`&#8209;&#8209;locales&nbsp;<&nbsp;>` +
@@ -222,6 +267,7 @@ a|
 `LOCALES`
 a|
 * install-system
+* install-system-raspi-lts
 |The locales (e.g. _C.UTF-8_, _en_US.UTF-8_, _de_DE.UTF-8_) of the system to be created. If unspecified the installer will ask interactively.
 
 |`&#8209;&#8209;time&#8209;zone&nbsp;<&nbsp;>` +
@@ -229,6 +275,7 @@ a|
 `TIME_ZONE`
 a|
 * install-system
+* install-system-raspi-lts
 |The time zone (e.g. _UTC_, _Europe/Berlin_) of the system to be created. If unspecified the installer will ask interactively.
 
 |`&#8209;&#8209;user&#8209;gecos&nbsp;<&nbsp;>` +
@@ -236,6 +283,7 @@ a|
 `USER_GECOS`
 a|
 * install-system
+* install-system-raspi-lts
 |Additional GECOS information for the first user of the system to be created.
 
 |`&#8209;&#8209;password&nbsp;<&nbsp;>` +
@@ -243,6 +291,7 @@ a|
 `PASSWORD`
 a|
 * install-system
+* install-system-raspi-lts
 |The password for the first user of the system to be created. If unspecified the installer will ask interactively.
 
 |`&#8209;&#8209;keyboard&#8209;model&nbsp;<&nbsp;>` +
@@ -250,6 +299,7 @@ a|
 `KEYBOARD_MODEL`
 a|
 * install-system
+* install-system-raspi-lts
 |The keyboard model. If unspecified the installer will ask interactively. See file "/etc/default/keyboard" of another system to find matching values.
 
 |`&#8209;&#8209;keyboard&#8209;layout&nbsp;<&nbsp;>` +
@@ -257,6 +307,7 @@ a|
 `KEYBOARD_LAYOUT`
 a|
 * install-system
+* install-system-raspi-lts
 |The keyboard layout. If unspecified the installer will ask interactively. See file "/etc/default/keyboard" of another system to find matching values.
 
 |`&#8209;&#8209;keyboard&#8209;variant&nbsp;<&nbsp;>` +
@@ -264,6 +315,7 @@ a|
 `KEYBOARD_VARIANT`
 a|
 * install-system
+* install-system-raspi-lts
 |The keyboard variant. If unspecified the installer will ask interactively. See file "/etc/default/keyboard" of another system to find matching values.
 
 |`&#8209;&#8209;keyboard&#8209;options&nbsp;<&nbsp;>` +
@@ -271,6 +323,7 @@ a|
 `KEYBOARD_OPTIONS`
 a|
 * install-system
+* install-system-raspi-lts
 |The keyboard options. If unspecified the installer will ask interactively. See file "/etc/default/keyboard" of another system to find matching values.
 
 |===
