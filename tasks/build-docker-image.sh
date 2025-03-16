@@ -33,7 +33,7 @@ function build_docker_image {
   run_debootstrap "$CHROOT" "$CODENAME"
 
   # make the installer usable inside chroot environment
-  install_ubuntu_installer "false" "${CHROOT}${DEFAULT_INSTALL_DIR}" "${CHROOT}/usr/local/sbin"
+  install_ubuntu_installer "${CHROOT}${DEFAULT_INSTALL_DIR}" "${CHROOT}/usr/local/sbin"
 
   # mount OS resources into chroot environment
   mount_os_resources
