@@ -79,6 +79,15 @@ function verify_mounting_boot_efi {
   fi
 }
 
+function verify_mounting_boot_firmware {
+
+  # the block device file for the firmware partition
+  if [[ -n "${DEV_BOOT_FIRMWARE:-}" ]] && [[ ! -b "$DEV_BOOT_FIRMWARE" ]]; then
+    echo "$SELF_NAME: require device file for /boot/firmware" >&2
+    exit 1
+  fi
+}
+
 function verify_mounting_home {
 
   # the block device file for the home partition

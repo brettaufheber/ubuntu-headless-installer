@@ -6,7 +6,7 @@ function install_system {
   mkfs.ext4 "$DEV_ROOT"
 
   # mount devices/partitions
-  mount_devices "${DEV_ROOT:-}" "${DEV_BOOT_EFI:-}" "${DEV_HOME:-}"
+  mount_devices "${DEV_ROOT:-}" "${DEV_BOOT_EFI:-}" "" "${DEV_HOME:-}"
 
   # create a minimal system without kernel or bootloader
   run_debootstrap "$CHROOT" "$CODENAME"
@@ -16,7 +16,7 @@ function install_system {
 
   # perform some fundamental configuration
   configure_hosts
-  configure_fstab "${DEV_ROOT:-}" "${DEV_BOOT_EFI:-}" "${DEV_HOME:-}" "${TMP_SIZE:-}"
+  configure_fstab "${DEV_ROOT:-}" "${DEV_BOOT_EFI:-}" "" "${DEV_HOME:-}" "${TMP_SIZE:-}"
   configure_users
 
   # this allows to copy network settings from the host system; can help to perform a installation behind a proxy
