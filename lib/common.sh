@@ -213,34 +213,21 @@ function get_extra_groups {
 
 function install_ubuntu_installer {
 
-  local WITH_HELPER_EXTRAS
   local INSTALL_DIR
   local SBIN_DIR
   local REL_LINK_PATH
-  local ENTRY
 
-  WITH_HELPER_EXTRAS="${1:-"false"}"
-  INSTALL_DIR="${2:-"$DEFAULT_INSTALL_DIR"}"
-  SBIN_DIR="${3:-"/usr/local/sbin"}"
+  INSTALL_DIR="${1:-"$DEFAULT_INSTALL_DIR"}"
+  SBIN_DIR="${2:-"/usr/local/sbin"}"
 
   mkdir -p "$INSTALL_DIR"
 
   cp -v "$SELF_PROJECT_PATH/ubuntu-installer.sh" "$INSTALL_DIR"
   cp -rv "$SELF_PROJECT_PATH/tasks" "$INSTALL_DIR"
   cp -rv "$SELF_PROJECT_PATH/lib" "$INSTALL_DIR"
-  cp -rv "$SELF_PROJECT_PATH/helper-extras" "$INSTALL_DIR"
   cp -rv "$SELF_PROJECT_PATH/etc" "$INSTALL_DIR"
 
   chmod a+x "$INSTALL_DIR/ubuntu-installer.sh"
   REL_LINK_PATH="$(realpath --relative-to="$SBIN_DIR" "$INSTALL_DIR")"
   ln -sfn "$REL_LINK_PATH/ubuntu-installer.sh" "$SBIN_DIR/ubuntu-installer"
-
-  if "$WITH_HELPER_EXTRAS"; then
-    for ENTRY in "$INSTALL_DIR/helper-extras"/*; do
-      [[ -f "$ENTRY" ]] || continue
-      chmod a+x "$ENTRY"
-      REL_LINK_PATH="$(realpath --relative-to="$SBIN_DIR" "$ENTRY")"
-      ln -sfn "$REL_LINK_PATH" "$SBIN_DIR/$(basename "$ENTRY")"
-    done
-  fi
 }

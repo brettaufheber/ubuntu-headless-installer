@@ -9,10 +9,8 @@ function main {
   source "$SELF_PROJECT_PATH/lib/common.sh"
   source "$SELF_PROJECT_PATH/lib/verification.sh"
 
-  process_arguments "" "with-helper-extras" "$@"
-
   verify_root_privileges
-  install_ubuntu_installer "$WITH_HELPER_EXTRAS"
+  install_ubuntu_installer
 }
 
 set -euo pipefail

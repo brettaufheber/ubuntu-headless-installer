@@ -38,7 +38,7 @@ function install_system_raspi_lts {
   fi
 
   # make the installer usable inside chroot environment
-  install_ubuntu_installer "true" "${CHROOT}${DEFAULT_INSTALL_DIR}" "${CHROOT}/usr/local/sbin"
+  install_ubuntu_installer "${CHROOT}${DEFAULT_INSTALL_DIR}" "${CHROOT}/usr/local/sbin"
 
   # install minimal packages required to perform the next installation steps
   chroot "$CHROOT" ubuntu-installer install-packages-minimal
