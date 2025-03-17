@@ -12,7 +12,7 @@ function install_system_raspi_lts {
   download_image
 
   # format $DEV_ROOT
-  mkfs.ext4 "$DEV_ROOT"
+  format_ext4 "$DEV_ROOT"
 
   # mount the image devices/partitions
   mount_image

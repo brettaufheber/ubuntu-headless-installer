@@ -1,5 +1,19 @@
 #!/bin/bash
 
+function format_ext4 {
+
+  local DEV_FILE
+  local LABEL
+
+  DEV_FILE="$1"
+
+  if LABEL=$(e2label "$DEV_FILE" 2>/dev/null) && [[ -n "$LABEL" ]]; then
+    mkfs.ext4 -F -L "$LABEL" "$DEV_FILE"
+  else
+    mkfs.ext4 -F "$DEV_FILE"
+  fi
+}
+
 function configure_fstab {
 
   # declare local variables
