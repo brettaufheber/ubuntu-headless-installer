@@ -23,7 +23,7 @@ postgresql-client
 ### virtualization software ###
 [virt]
 
-qemu qemu-kvm
+qemu-system
 virtinst libvirt-daemon-system
 
 ### development software ###
