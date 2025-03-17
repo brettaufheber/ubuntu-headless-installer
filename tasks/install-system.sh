@@ -3,7 +3,7 @@
 function install_system {
 
   # format $DEV_ROOT
-  mkfs.ext4 "$DEV_ROOT"
+  format_ext4 "$DEV_ROOT"
 
   # mount devices/partitions
   mount_devices "${DEV_ROOT:-}" "${DEV_BOOT_EFI:-}" "" "${DEV_HOME:-}"
