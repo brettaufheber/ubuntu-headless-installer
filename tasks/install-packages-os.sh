@@ -14,7 +14,7 @@ function install_packages_os {
     apt-get -y install grub-pc
     grub-install "$DEV_MBR_LEGACY"
   else
-    apt-get -y install grub-efi
+    apt-get -y install grub-efi-amd64-signed shim-signed
     grub-install --target=x86_64-efi --efi-directory=/boot/efi
     echo 'The boot order must be adjusted manually using the efibootmgr tool.'
   fi
