@@ -41,9 +41,6 @@ libgtkmm-3.0-dev libgtkmm-2.4-dev
 # install support for Ada
 gnat
 
-# install support for Objective-C
-gobjc
-
 # install support for Perl
 perl
 libgtk3-perl
