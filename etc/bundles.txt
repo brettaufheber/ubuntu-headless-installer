@@ -107,6 +107,7 @@ gucharmap
 gnome-core
 gnome-contacts
 gnome-calendar
+gnome-clocks
 gnome-software-plugin-snap
 gnome-software-plugin-flatpak flatpak
 language-selector-gnome
