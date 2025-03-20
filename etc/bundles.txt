@@ -43,7 +43,6 @@ gnat
 
 # install support for Perl
 perl
-libgtk3-perl
 
 # install support for PHP
 php-cli php-fpm
