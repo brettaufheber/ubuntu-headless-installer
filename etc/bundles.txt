@@ -17,6 +17,7 @@ tshark
 traceroute
 tcptraceroute
 whois
+ipcalc
 ldap-utils
 postgresql-client
 
