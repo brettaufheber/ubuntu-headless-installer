@@ -33,7 +33,7 @@ function install_packages_base {
   apt-get -y install tar gzip bzip2 xz-utils zip unzip p7zip-full p7zip-rar unrar lzop zstd lz4
 
   # install SSH support
-  apt-get -y install openssh-server openssh-client
+  apt-get -y install openssh-server openssh-client sshfs
 
   # install SSL support
   apt-get -y install openssl
