@@ -5,6 +5,7 @@ curl
 wget
 iputils-arping iputils-ping iputils-tracepath iputils-clockdiff
 iproute2
+mtr-tiny
 net-tools
 arp-scan
 dnsutils
