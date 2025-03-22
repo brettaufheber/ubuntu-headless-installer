@@ -124,7 +124,7 @@ network-manager-strongswan
 
 # install scanner and printer support
 gscan2pdf
-cups cups-client cups-bsd
+cups cups-client cups-pdf cups-bsd
 
 # install font files
 fonts-open-sans
