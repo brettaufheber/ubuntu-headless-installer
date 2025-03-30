@@ -58,6 +58,11 @@ function build_docker_image {
   # remove retrieved package files
   chroot "$CHROOT" apt-get clean
 
+  # run post install command
+  if [[ -n "${POST_INSTALL_CMD:-}" ]]; then
+    chroot "$CHROOT" /bin/bash -euo pipefail -c "$POST_INSTALL_CMD"
+  fi
+
   # unmount all bound OS resources
   unmount_os_resources
 
@@ -90,7 +95,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     source "$SELF_PROJECT_PATH/lib/any-installation.sh"
 
     process_dotenv
-    process_arguments "hc" "help,codename:,mirror:,bundles:,bundles-file:,debconf-file:" "$@"
+    process_arguments "hc" "help,codename:,mirror:,bundles:,bundles-file:,debconf-file:,post-install-cmd:" "$@"
 
     # verify preconditions
     verify_root_privileges

@@ -64,6 +64,11 @@ function install_system {
     --user-gecos "${USER_GECOS:-}" \
     --password "${PASSWORD:-}"
 
+  # run post install command
+  if [[ -n "${POST_INSTALL_CMD:-}" ]]; then
+    chroot "$CHROOT" /bin/bash -euo pipefail -c "$POST_INSTALL_CMD"
+  fi
+
   # login to shell for diagnostic purposes
   if "$SHELL_LOGIN"; then
     user_login_chroot
@@ -92,7 +97,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     LONG_OPTIONS='help,shell-login,copy-network-settings'
     LONG_OPTIONS="$LONG_OPTIONS"',codename:,hostname-new:,username-new:,mirror:'
     LONG_OPTIONS="$LONG_OPTIONS"',dev-root:,dev-boot-efi:,dev-home:,dev-mbr-legacy:'
-    LONG_OPTIONS="$LONG_OPTIONS"',tmp-size:,bundles:,bundles-file:,debconf-file:,dconf-file:'
+    LONG_OPTIONS="$LONG_OPTIONS"',tmp-size:,bundles:,bundles-file:,debconf-file:,dconf-file:,post-install-cmd:'
     LONG_OPTIONS="$LONG_OPTIONS"',locales:,time-zone:,user-gecos:,password:'
     LONG_OPTIONS="$LONG_OPTIONS"',keyboard-model:,keyboard-layout:,keyboard-variant:,keyboard-options:'
     process_arguments "hlkcnu" "$LONG_OPTIONS" "$@"
