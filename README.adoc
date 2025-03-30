@@ -262,6 +262,16 @@ a|
 * install-system-raspi-lts
 |The path to an optional file that overwrites the GNOME dconf defaults.
 
+|`&#8209;&#8209;post&#8209;install&#8209;cmd&nbsp;<&nbsp;>` +
+ +
+`POST_INSTALL_CMD`
+a|
+* install-system
+* install-system-raspi-lts
+* build-lxc-image
+* build-docker-image
+|A user-specific command that will be executed at the end of the installation.
+
 |`&#8209;&#8209;locales&nbsp;<&nbsp;>` +
  +
 `LOCALES`
