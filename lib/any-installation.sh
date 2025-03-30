@@ -81,13 +81,13 @@ function configure_desktop {
   DCONF_FILE="$1"
 
   # only apply if flatpak is installed
-  if command -v flatpak &>/dev/null; then
+  if chroot "$CHROOT" sh -c 'command -v flatpak' &> /dev/null; then
     # add flatpak remote: flathub
     chroot "$CHROOT" flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
   fi
 
   # only apply if the gnome-shell is installed
-  if command -v gnome-shell &>/dev/null; then
+  if chroot "$CHROOT" sh -c 'command -v gnome-shell' &>/dev/null; then
     # modify default GNOME settings
     install_default_gnome_settings "$DCONF_FILE"
   fi
