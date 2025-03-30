@@ -7,6 +7,7 @@ function build_lxc_image {
   local IMAGE_RELEASE
   local IMAGE_NAME
   local IMAGE_LATEST
+  local IMAGE_FINGERPRINT
 
   # create temporary directory
   TEMP_DIR="$(mktemp -d)"
@@ -76,6 +77,8 @@ function build_lxc_image {
     echo "  description: Ubuntu $CODENAME with extended tooling"
     echo "  os: ubuntu"
     echo "  release: $CODENAME $IMAGE_RELEASE"
+    echo "profiles:"
+    echo "  - default"
     echo "templates:"
     echo "  /etc/hosts:"
     echo "    when:"
@@ -101,14 +104,20 @@ function build_lxc_image {
   tar -czf "$TEMP_DIR/rootfs.tar.gz" -C "$CHROOT" .
   tar -czf "$TEMP_DIR/metadata.tar.gz" -C "$TEMP_DIR" 'metadata.yaml' 'templates'
 
+  # remove 'latest' alias from older image
+  if lxc image alias list --format csv | grep -qF "${IMAGE_LATEST},"; then
+    echo "$SELF_NAME: alias $IMAGE_LATEST already exists; it will be removed to be available for the new image"
+    lxc image alias delete "$IMAGE_LATEST"
+  fi
+
   # install image
   lxc image import "$TEMP_DIR/metadata.tar.gz" "$TEMP_DIR/rootfs.tar.gz" --alias "$IMAGE_NAME"
 
   # retrieve the fingerprint of the newly imported image
-  IMAGE_FINGERPRINT="$(lxc image info "$IMAGE_NAME" --format='{{ .fingerprint }}')"
+  IMAGE_FINGERPRINT="$(lxc image info "$IMAGE_NAME" | sed -n 's/^Fingerprint: *//p')"
 
   # add the 'latest' alias pointing to the same image
-  lxc image alias add "$IMAGE_LATEST" "$IMAGE_FINGERPRINT"
+  lxc image alias create "$IMAGE_LATEST" "$IMAGE_FINGERPRINT"
 
   # remove temporary directory
   rm -rf "$TEMP_DIR"
