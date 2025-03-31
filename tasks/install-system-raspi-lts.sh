@@ -70,6 +70,7 @@ function install_system_raspi_lts {
 
   # create user
   chroot "$CHROOT" ubuntu-installer user-modify \
+    --add-extra-groups \
     --username-new "$USERNAME_NEW" \
     --username-old "pi" \
     --user-gecos "${USER_GECOS:-}" \
