@@ -5,7 +5,11 @@ function user_modify {
   local EXTRA_GROUPS
 
   # get the extra groups
-  EXTRA_GROUPS="$(grep '^EXTRA_GROUPS=' /etc/adduser.conf | cut -d '=' -f2 | tr -d '"')"
+  if "$ADD_EXTRA_GROUPS"; then
+    EXTRA_GROUPS="$(grep '^EXTRA_GROUPS=' /etc/adduser.conf | cut -d '=' -f2 | tr -d '"')"
+  else
+    EXTRA_GROUPS="users"
+  fi
 
   # change username if required
   if [[ -n "${USERNAME_OLD:-}" && "$USERNAME_OLD" != "$USERNAME_NEW" ]]; then
@@ -43,7 +47,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     source "$SELF_PROJECT_PATH/lib/verification.sh"
 
     process_dotenv
-    process_arguments "hu" "help,username-new:,username-old:,user-gecos:,password:" "$@"
+    process_arguments "heu" "help,add-extra-groups,username-new:,username-old:,user-gecos:,password:" "$@"
 
     # verify preconditions
     verify_root_privileges
