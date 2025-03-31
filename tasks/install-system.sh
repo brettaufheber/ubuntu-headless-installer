@@ -60,6 +60,7 @@ function install_system {
 
   # create user
   chroot "$CHROOT" ubuntu-installer user-create \
+    --add-extra-groups \
     --username-new "$USERNAME_NEW" \
     --user-gecos "${USER_GECOS:-}" \
     --password "${PASSWORD:-}"
