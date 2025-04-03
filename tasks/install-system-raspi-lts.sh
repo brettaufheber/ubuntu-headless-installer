@@ -54,7 +54,7 @@ function install_system_raspi_lts {
   chroot "$CHROOT" ubuntu-installer configure-tools
 
   # manage package sources
-  chroot "$CHROOT" ubuntu-installer manage-package-sources --mirror "${MIRROR:-"http://ports.ubuntu.com/ubuntu-ports"}"
+  chroot "$CHROOT" ubuntu-installer manage-package-sources --mirror "$MIRROR"
 
   # install software
   chroot "$CHROOT" ubuntu-installer install-packages-base \
@@ -209,7 +209,7 @@ function download_image {
   IMAGE_VERSION="$(cat "$TEMP_DIR/meta-release-lts" | sed -n '/^Dist: '"$CODENAME"'/{n;n;s/^Version: //; s/ LTS$//; p;}')"
 
   # build the image URL using the retrieved version
-  IMAGE_URL="https://cdimage.ubuntu.com/releases/$IMAGE_VERSION/release/ubuntu-$IMAGE_VERSION-preinstalled-server-arm64+raspi.img.xz"
+  IMAGE_URL="https://cdimage.ubuntu.com/releases/$IMAGE_VERSION/release/ubuntu-$IMAGE_VERSION-preinstalled-server-$ARCH+raspi.img.xz"
 
  # download and decompress the image
   echo "The image is downloading. This may take a few minutes."
@@ -248,7 +248,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
     process_dotenv
     LONG_OPTIONS='help,shell-login,copy-network-settings'
-    LONG_OPTIONS="$LONG_OPTIONS"',codename:,hostname-new:,username-new:,mirror:'
+    LONG_OPTIONS="$LONG_OPTIONS"',codename:,hostname-new:,username-new:,arch:,mirror:'
     LONG_OPTIONS="$LONG_OPTIONS"',dev-root:,dev-boot-firmware:,dev-home:'
     LONG_OPTIONS="$LONG_OPTIONS"',tmp-size:,bundles:,bundles-file:,debconf-file:,dconf-file:,post-install-cmd:'
     LONG_OPTIONS="$LONG_OPTIONS"',locales:,time-zone:,user-gecos:,password:'
@@ -260,6 +260,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     verify_codename
     verify_hostname
     verify_username
+    verify_architecture
+    verify_mirror
     verify_mounting_root
     verify_mounting_boot_firmware
     verify_mounting_home

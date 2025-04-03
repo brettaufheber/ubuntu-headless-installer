@@ -61,6 +61,71 @@ function verify_codename {
   fi
 }
 
+function verify_architecture {
+
+  # List of ports: https://www.debian.org/ports/
+  # Ubuntu may not support all architectures offered by Debian
+
+  if [[ -z "${ARCH:-}" ]]; then
+    if command -v dpkg &> /dev/null; then
+      ARCH="$(dpkg --print-architecture)"
+    else
+      ARCH="$(uname -m)"
+    fi
+  fi
+
+  case "$(echo "$ARCH" | tr '[:upper:]' '[:lower:]')" in
+    amd64|x86_64|x64)
+      ARCH="amd64"  # 64-Bit, Little Endian
+      ;;
+    i386|i486|i586|i686|i786|x86)
+      ARCH="i386"  # 32-Bit, Little Endian
+      ;;
+    arm64|aarch64|armv8)
+      ARCH="arm64"  # 64-Bit, Little Endian (ARM)
+      ;;
+    armhf|armv7l|armv7)
+      ARCH="armhf"  # 32-Bit, Little Endian (ARMv7, Hard Float ABI)
+      ;;
+    armel)
+      ARCH="armel"  # 32-Bit, Little Endian (EABI ARM)
+      ;;
+    mips64el|mips64)
+      ARCH="mips64el"  # 64-Bit, Little Endian (MIPS)
+      ;;
+    ppc64el|ppc64le|powerpc64el|powerpc64le)
+      ARCH="ppc64el"  # 64-Bit, Little Endian (POWER PC)
+      ;;
+    ppc64|powerpc64)
+      ARCH="ppc64"  # 64-Bit, Big Endian (POWER PC)
+      ;;
+    riscv64|rv64)
+      ARCH="riscv64"  # 64-Bit, Little Endian (RISC-V)
+      ;;
+    s390x)
+      ARCH="s390x"  # 64-Bit, Big Endian (IBM System z)
+      ;;
+    *)
+      echo "$SELF_NAME: unsupported architecture $ARCH" >&2
+      exit 1
+      ;;
+  esac
+}
+
+function verify_mirror {
+
+  if [[ -z "${MIRROR:-}" ]]; then
+    case "$ARCH" in
+      amd64|i386)
+        MIRROR="http://archive.ubuntu.com/ubuntu"
+        ;;
+      *)
+        MIRROR="http://ports.ubuntu.com/ubuntu-ports"
+        ;;
+    esac
+  fi
+}
+
 function verify_mounting_root {
 
   # the block device file for the system partition must be unmounted

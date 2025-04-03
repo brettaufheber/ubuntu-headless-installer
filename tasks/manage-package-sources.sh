@@ -14,11 +14,6 @@ function manage_package_sources {
   PREFERENCES='/etc/apt/preferences.d'
   COMPONENTS='main universe multiverse restricted'
 
-  # by default, use the whole Ubuntu mirror list
-  if [[ -z "${MIRROR:-}" ]]; then
-    MIRROR='mirror://mirrors.ubuntu.com/mirrors.txt'
-  fi
-
   # set OS variables
   source /etc/os-release
 
@@ -58,10 +53,12 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     source "$SELF_PROJECT_PATH/lib/verification.sh"
 
     process_dotenv
-    process_arguments "h" "help,mirror:" "$@"
+    process_arguments "h" "help,arch:,mirror:" "$@"
 
     # verify preconditions
     verify_root_privileges
+    verify_architecture
+    verify_mirror
 
     manage_package_sources
   }

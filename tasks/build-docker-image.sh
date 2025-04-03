@@ -30,7 +30,7 @@ function build_docker_image {
   echo "$SELF_NAME: install the system temporarily in $CHROOT"
 
   # create a minimal system without kernel or bootloader
-  run_debootstrap "$CHROOT" "$CODENAME"
+  debootstrap "--arch=$ARCH" "$CODENAME" "$CHROOT" "$MIRROR"
 
   # make the installer usable inside chroot environment
   install_ubuntu_installer "${CHROOT}${DEFAULT_INSTALL_DIR}" "${CHROOT}/usr/local/sbin"
@@ -47,7 +47,7 @@ function build_docker_image {
   chroot "$CHROOT" ubuntu-installer configure-tools
 
   # manage package sources
-  chroot "$CHROOT" ubuntu-installer manage-package-sources --mirror "${MIRROR:-"http://archive.ubuntu.com/ubuntu"}"
+  chroot "$CHROOT" ubuntu-installer manage-package-sources --mirror "$MIRROR"
 
   # install software
   chroot "$CHROOT" ubuntu-installer install-packages-base \
@@ -95,11 +95,16 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     source "$SELF_PROJECT_PATH/lib/any-installation.sh"
 
     process_dotenv
-    process_arguments "hc" "help,codename:,mirror:,bundles:,bundles-file:,debconf-file:,post-install-cmd:" "$@"
+    LONG_OPTIONS='help'
+    LONG_OPTIONS="$LONG_OPTIONS"',codename:,arch:,mirror:'
+    LONG_OPTIONS="$LONG_OPTIONS"',bundles:,bundles-file:,debconf-file:,post-install-cmd:'
+    process_arguments "hc" "$LONG_OPTIONS" "$@"
 
     # verify preconditions
     verify_root_privileges
     verify_codename
+    verify_architecture
+    verify_mirror
     verify_bundles_file
     verify_debconf_file
 

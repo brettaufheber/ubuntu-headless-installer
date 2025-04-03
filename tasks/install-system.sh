@@ -9,7 +9,7 @@ function install_system {
   mount_devices "${DEV_ROOT:-}" "${DEV_BOOT_EFI:-}" "" "${DEV_HOME:-}"
 
   # create a minimal system without kernel or bootloader
-  run_debootstrap "$CHROOT" "$CODENAME"
+  debootstrap "--arch=$ARCH" "$CODENAME" "$CHROOT" "$MIRROR"
 
   # mount OS resources into chroot environment
   mount_os_resources
@@ -44,7 +44,7 @@ function install_system {
   chroot "$CHROOT" ubuntu-installer configure-tools
 
   # manage package sources
-  chroot "$CHROOT" ubuntu-installer manage-package-sources --mirror "${MIRROR:-"http://archive.ubuntu.com/ubuntu"}"
+  chroot "$CHROOT" ubuntu-installer manage-package-sources --mirror "$MIRROR"
 
   # install software
   chroot "$CHROOT" ubuntu-installer install-packages-base \
@@ -96,7 +96,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
     process_dotenv
     LONG_OPTIONS='help,shell-login,copy-network-settings'
-    LONG_OPTIONS="$LONG_OPTIONS"',codename:,hostname-new:,username-new:,mirror:'
+    LONG_OPTIONS="$LONG_OPTIONS"',codename:,hostname-new:,username-new:,arch:,mirror:'
     LONG_OPTIONS="$LONG_OPTIONS"',dev-root:,dev-boot-efi:,dev-home:,dev-mbr-legacy:'
     LONG_OPTIONS="$LONG_OPTIONS"',tmp-size:,bundles:,bundles-file:,debconf-file:,dconf-file:,post-install-cmd:'
     LONG_OPTIONS="$LONG_OPTIONS"',locales:,time-zone:,user-gecos:,password:'
@@ -108,6 +108,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     verify_codename
     verify_hostname
     verify_username
+    verify_architecture
+    verify_mirror
     verify_mounting_root
     verify_mounting_boot_efi
     verify_mounting_home
