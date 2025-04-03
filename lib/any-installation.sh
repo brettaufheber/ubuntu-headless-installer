@@ -1,29 +1,5 @@
 #!/bin/bash
 
-function run_debootstrap {
-
-  local TARGET_PATH
-  local CODENAME
-  local ARCH
-  local URL
-
-  TARGET_PATH="$1"
-  CODENAME="$2"
-  ARCH="${3:-"amd64"}"
-
-  if [[ "$ARCH" == "amd64" ]]; then
-    URL='http://archive.ubuntu.com/ubuntu'
-  elif [[ "$ARCH" == "arm64" ]]; then
-    URL='http://ports.ubuntu.com/ubuntu-ports'
-  else
-    echo "$SELF_NAME: unsupported architecture: $ARCH" >&2
-    exit 4
-  fi
-
-  # install minimal system without kernel or bootloader
-  debootstrap "--arch=$ARCH" "$CODENAME" "$TARGET_PATH" "$URL"
-}
-
 function configure_hosts {
 
   # configure hosts with default arguments
