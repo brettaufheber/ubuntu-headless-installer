@@ -10,6 +10,14 @@ function user_create {
     ADD_USER_ARGS+=( "--add_extra_groups" )
   fi
 
+  if [[ -n "${UID_NEW:-}" ]]; then
+    ADD_USER_ARGS+=( "--uid" "$UID_NEW" )
+  fi
+
+  if [[ -n "${GID_NEW:-}" ]]; then
+    ADD_USER_ARGS+=( "--gid" "$GID_NEW" )
+  fi
+
   if [[ -n "${PASSWORD:-}" ]]; then
     ADD_USER_ARGS+=( "--disabled-password" )
   fi
@@ -36,7 +44,10 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     source "$SELF_PROJECT_PATH/lib/verification.sh"
 
     process_dotenv
-    process_arguments "heu" "help,add-extra-groups,username-new:,user-gecos:,password:" "$@"
+    LONG_OPTIONS='help,add-extra-groups'
+    LONG_OPTIONS="$LONG_OPTIONS"',username-new:,uid-new:,gid-new:,user-gecos:'
+    LONG_OPTIONS="$LONG_OPTIONS"',password:'
+    process_arguments "heu" "$LONG_OPTIONS" "$@"
 
     # verify preconditions
     verify_root_privileges
