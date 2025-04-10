@@ -11,7 +11,7 @@ function install_packages_base {
 
   # install main packages
   apt-get -y install ubuntu-server ubuntu-standard
-  apt-get -y install lxc debootstrap bridge-utils
+  apt-get -y install debootstrap bridge-utils
   apt-get -y install software-properties-common apt-transport-https
   apt-get -y install debconf-utils
   apt-get -y install aptitude
