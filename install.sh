@@ -10,7 +10,7 @@ function main {
   source "$SELF_PROJECT_PATH/lib/verification.sh"
 
   verify_root_privileges
-  install_ubuntu_installer
+  install_ubuntu_installer "$@"
 }
 
 set -euo pipefail

@@ -50,10 +50,7 @@ function build_docker_image {
   chroot "$CHROOT" ubuntu-installer manage-package-sources --mirror "$MIRROR"
 
   # install software
-  chroot "$CHROOT" ubuntu-installer install-packages-base \
-    --bundles "${BUNDLES:-}" \
-    --bundles-file "${BUNDLES_FILE:-}" \
-    --debconf-file "${DEBCONF_FILE:-}"
+  chroot "$CHROOT" ubuntu-installer install-packages-base --bundles "${BUNDLES:-}"
 
   # remove retrieved package files
   chroot "$CHROOT" apt-get clean
