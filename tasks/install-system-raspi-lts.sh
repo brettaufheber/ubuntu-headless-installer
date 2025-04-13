@@ -57,10 +57,7 @@ function install_system_raspi_lts {
   chroot "$CHROOT" ubuntu-installer manage-package-sources --mirror "$MIRROR"
 
   # install software
-  chroot "$CHROOT" ubuntu-installer install-packages-base \
-    --bundles "${BUNDLES:-}" \
-    --bundles-file "${BUNDLES_FILE:-}" \
-    --debconf-file "${DEBCONF_FILE:-}"
+  chroot "$CHROOT" ubuntu-installer install-packages-base --bundles "${BUNDLES:-}"
 
   # do some modifications for desktop environments, but only if specific desktop related packages are installed
   configure_desktop "${DCONF_FILE:-}"

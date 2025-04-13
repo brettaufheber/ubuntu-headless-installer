@@ -220,14 +220,30 @@ function install_ubuntu_installer {
   INSTALL_DIR="${1:-"$DEFAULT_INSTALL_DIR"}"
   SBIN_DIR="${2:-"/usr/local/sbin"}"
 
-  mkdir -p "$INSTALL_DIR"
+  if [[ "$INSTALL_DIR" != "$SELF_PROJECT_PATH" ]]; then
 
-  cp -v "$SELF_PROJECT_PATH/ubuntu-installer.sh" "$INSTALL_DIR"
-  cp -rv "$SELF_PROJECT_PATH/tasks" "$INSTALL_DIR"
-  cp -rv "$SELF_PROJECT_PATH/lib" "$INSTALL_DIR"
-  cp -rv "$SELF_PROJECT_PATH/etc" "$INSTALL_DIR"
+    mkdir -p "$INSTALL_DIR"
 
-  chmod a+x "$INSTALL_DIR/ubuntu-installer.sh"
+    cp -v "$SELF_PROJECT_PATH/ubuntu-installer.sh" "$INSTALL_DIR"
+    cp -rv "$SELF_PROJECT_PATH/tasks" "$INSTALL_DIR"
+    cp -rv "$SELF_PROJECT_PATH/lib" "$INSTALL_DIR"
+    cp -rv "$SELF_PROJECT_PATH/etc" "$INSTALL_DIR"
+
+    chmod a+x "$INSTALL_DIR/ubuntu-installer.sh"
+  fi
+
+  if [[ -n "${BUNDLES_FILE:-}" && "$BUNDLES_FILE" != "$SELF_PROJECT_PATH/etc/bundles.txt" ]]; then
+    cp -v "$BUNDLES_FILE" "$INSTALL_DIR/etc/bundles.txt"
+  fi
+
+  if [[ -n "${DEBCONF_FILE:-}" && "$DEBCONF_FILE" != "$SELF_PROJECT_PATH/etc/debconf.txt" ]]; then
+    cp -v "$DEBCONF_FILE" "$INSTALL_DIR/etc/debconf.txt"
+  fi
+
+  if [[ -n "${DCONF_FILE:-}" && "$DCONF_FILE" != "$SELF_PROJECT_PATH/etc/dconf.txt" ]]; then
+    cp -v "$DCONF_FILE" "$INSTALL_DIR/etc/dconf.txt"
+  fi
+
   REL_LINK_PATH="$(realpath --relative-to="$SBIN_DIR" "$INSTALL_DIR")"
   ln -sfn "$REL_LINK_PATH/ubuntu-installer.sh" "$SBIN_DIR/ubuntu-installer"
 }
