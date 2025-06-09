@@ -28,6 +28,7 @@ function install_packages_base {
   apt-get -y install emacs-nox
   apt-get -y install nano
   apt-get -y install jq
+  apt-get -y install yq
 
   # install archiving and compression tools
   apt-get -y install tar gzip bzip2 xz-utils zip unzip p7zip-full p7zip-rar unrar lzop zstd lz4
