@@ -86,6 +86,9 @@ sbt
 # install linting tool for shell scripts
 shellcheck
 
+# install jq wrapper for YAML documents
+yq
+
 ### x86 related software ###
 [dev:x86]
 
