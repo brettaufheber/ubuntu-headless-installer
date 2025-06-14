@@ -14,6 +14,14 @@ function format_ext4 {
   fi
 }
 
+function ensure_resolv_conf_on_host {
+
+  if [[ ! -f "/run/systemd/resolve/stub-resolv.conf" ]]; then
+    mkdir -p "/run/systemd/resolve"
+    cp "/etc/resolv.conf" "/run/systemd/resolve/stub-resolv.conf"
+  fi
+}
+
 function configure_fstab {
 
   # declare local variables
