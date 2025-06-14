@@ -264,7 +264,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     verify_debconf_file
     verify_dconf_file
 
-    install_system
+    install_system_raspi_lts
   }
 
   set -euEo pipefail
