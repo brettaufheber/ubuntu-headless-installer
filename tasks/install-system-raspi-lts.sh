@@ -194,7 +194,7 @@ function download_image {
   local IMAGE_VERSION
   local IMAGE_URL
 
-  wget --fail -qO - "http://changelogs.ubuntu.com/meta-release-lts" > "$TEMP_DIR/meta-release-lts"
+  curl --fail --silent --show-error --location "http://changelogs.ubuntu.com/meta-release-lts" -o "$TEMP_DIR/meta-release-lts"
 
   if ! cat "$TEMP_DIR/meta-release-lts" | grep -q "^Dist: $CODENAME\$"; then
     echo "$SELF_NAME: codename '$CODENAME' not found in meta-release-lts" >&2
@@ -208,7 +208,7 @@ function download_image {
   IMAGE_URL="https://cdimage.ubuntu.com/releases/$IMAGE_VERSION/release/ubuntu-$IMAGE_VERSION-preinstalled-server-$ARCH+raspi.img.xz"
 
  # download and decompress the image
-  wget --fail -qO - "$IMAGE_URL" | unxz > "$TEMP_DIR/ubuntu-raspi.img"
+  curl --fail --silent --show-error --location "$IMAGE_URL" | unxz > "$TEMP_DIR/ubuntu-raspi.img"
 }
 
 function error_trap_plus {
