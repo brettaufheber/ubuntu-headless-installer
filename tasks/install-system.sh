@@ -11,6 +11,9 @@ function install_system {
   # create a minimal system without kernel or bootloader
   debootstrap "--arch=$ARCH" "$CODENAME" "$CHROOT" "$MIRROR"
 
+  # make sure that symlinks to stub-resolv.conf will not break
+  ensure_resolv_conf_on_host
+
   # mount OS resources into chroot environment
   mount_os_resources
 

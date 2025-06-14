@@ -23,6 +23,9 @@ function install_system_raspi_lts {
   # copy OS files from the image to the target system
   copy_files_from_image
 
+  # make sure that symlinks to stub-resolv.conf will not break
+  ensure_resolv_conf_on_host
+
   # mount OS resources into chroot environment
   mount_os_resources
 
