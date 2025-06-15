@@ -37,12 +37,13 @@ function mount_os_resources {
   sync
 
   # mount OS resources needed for a chroot based installation
-  mount -t proc /proc "$CHROOT/proc"
-  mount -t sysfs /sys "$CHROOT/sys"
-  mount -o bind /dev/ "$CHROOT/dev"
-  mount -o bind /dev/pts "$CHROOT/dev/pts"
-  mount -o bind /run "$CHROOT/run"
-  mount -o bind /tmp "$CHROOT/tmp"
+  mkdir -p "$CHROOT/proc" && mount -t proc "/proc" "$CHROOT/proc"
+  mkdir -p "$CHROOT/sys" && mount -t sysfs "/sys" "$CHROOT/sys"
+  mkdir -p "$CHROOT/dev" && mount -o bind "/dev" "$CHROOT/dev"
+  mkdir -p "$CHROOT/dev/pts" && mount -o bind "/dev/pts" "$CHROOT/dev/pts"
+  mkdir -p "$CHROOT/run" && mount -o bind "/run" "$CHROOT/run"
+  mkdir -p "$CHROOT/run/lock" && mount -o bind "/run/lock" "$CHROOT/run/lock"
+  mkdir -p "$CHROOT/tmp" && mount -o bind "/tmp" "$CHROOT/tmp"
 }
 
 function unmount_devices {
@@ -70,6 +71,7 @@ function unmount_os_resources {
 
   # unmount OS resources
   mountpoint -q "$CHROOT/tmp" && umount -l "$CHROOT/tmp"
+  mountpoint -q "$CHROOT/run/lock" && umount -l "$CHROOT/run/lock"
   mountpoint -q "$CHROOT/run" && umount -l "$CHROOT/run"
   mountpoint -q "$CHROOT/dev/pts" && umount -l "$CHROOT/dev/pts"
   mountpoint -q "$CHROOT/dev" && umount -l "$CHROOT/dev"
