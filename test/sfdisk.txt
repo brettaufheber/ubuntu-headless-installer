@@ -7,12 +7,11 @@ unit: sectors
 #
 # x... start of partition in GiB
 # y... size of partition in GiB
-# start, end, size... in sectors (2048 sectors * 512 Byte = 1048576 Bytes = 1 MiB)
+# start, size... in sectors (2048 sectors * 512 Byte = 1048576 Bytes = 1 MiB)
 #
-# start = (2048*(1024*x+1))
-# end = (2048*1024*(x+y))
-# size = (2048*(1024*y-1)+1)
+# start(x) = 2048 * (1024 * x + 1)
+# size(y) = 2048 * 1024 * y
 #
 
-/dev/loopXp1 : start=        2048, size=    16775169, type=83, bootable
-/dev/loopXp2 : start=    16779264, size=     2095105, type=83
+1 : start=     2048, size= 16777216, type= 83, bootable
+2 : start= 16779264, size=  2097152, type= 83
