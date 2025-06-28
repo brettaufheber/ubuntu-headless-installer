@@ -48,6 +48,7 @@ function configure_users {
   # edit /etc/adduser.conf
   sed -i 's/^#EXTRA_GROUPS=.*/EXTRA_GROUPS="'"$EXTRA_GROUPS"'"/' "$FILE"
   sed -i 's/^#NAME_REGEX=.*/NAME_REGEX="'"$NAME_REGEX"'"/' "$FILE"
+  sed -i 's/^#DIR_MODE=.*/DIR_MODE="0750"/' "$FILE"
 }
 
 function configure_desktop {
