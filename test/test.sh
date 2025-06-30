@@ -91,19 +91,20 @@ function execute_installer {
 function get_codenames {
 
   local REPO_BASE_URL
-  local MAX_LTS_SUPPORT_YEARS
-  local CURRENT_YEAR
-  local CURRENT_CODENAME
-  local CURRENT_LTS_YEAR
+  local THRESHOLD
+  local NOW
   local VERSIONS_AVAILABLE
+  local CURRENT_CODENAME
   local METADATA
   local META_CODENAME
-  local META_DATE
+  local META_VERSION
+  local META_MONTH
   local META_YEAR
+  local META_TIMESTAMP
 
   REPO_BASE_URL='http://archive.ubuntu.com/ubuntu/dists'
-  MAX_LTS_SUPPORT_YEARS=5
-  CURRENT_YEAR="$(date +%Y)"
+  THRESHOLD=$(date -d '5 years ago' +%s)
+  NOW=$(date +%s)
 
   VERSIONS_AVAILABLE="$(
     wget -qO - "$REPO_BASE_URL/" |
@@ -116,15 +117,20 @@ function get_codenames {
 
     METADATA="$(wget -qO - "$REPO_BASE_URL/$CURRENT_CODENAME/Release")"
     META_CODENAME="$(echo "$METADATA" | grep -oP 'Codename:\s+\K[^\n]+')"
-    META_DATE="$(echo "$METADATA" | grep -oP 'Date:\s+\K[^\n]+')"
-    META_YEAR="$(date -d "$META_DATE" +%Y)"
-    CURRENT_LTS_YEAR=$((CURRENT_YEAR - META_YEAR))
+    META_VERSION=$(echo "$METADATA" | grep -oP '^Version:\s+\K[0-9]+\.[0-9]+')
 
-    if [[ "$META_CODENAME" = "$CURRENT_CODENAME" ]] && [[ "$CURRENT_LTS_YEAR" -le "$MAX_LTS_SUPPORT_YEARS" ]]; then
+    META_MONTH=${META_VERSION#*.}
+    META_MONTH="$(printf "%02d" "$META_MONTH")"
+    META_YEAR=${META_VERSION%%.*}
+    META_YEAR="$(( $(date +%Y) / (10 ** ${#META_YEAR}) * (10 ** ${#META_YEAR}) + 10#${META_YEAR} ))"
+    META_TIMESTAMP="$(date -d "${META_YEAR}-${META_MONTH}-01" +%s)"
+
+    if [[ "$META_CODENAME" == "$CURRENT_CODENAME" ]] &&
+        (( META_TIMESTAMP >= THRESHOLD && META_TIMESTAMP <= NOW )); then
       echo "$CURRENT_CODENAME"
     fi
 
-  done <<<"$VERSIONS_AVAILABLE"
+  done <<< "$VERSIONS_AVAILABLE"
 }
 
 function before_each {
