@@ -86,8 +86,9 @@ sbt
 # install linting tool for shell scripts
 shellcheck
 
-# install jq wrapper for YAML documents
+# install JSON and YAML tooling
 yq
+python3-jsonschema
 
 ### x86 related software ###
 [dev:x86]
