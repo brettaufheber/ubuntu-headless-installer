@@ -21,6 +21,7 @@ whois
 ipcalc
 ldap-utils
 postgresql-client
+trurl
 
 ### virtualization software ###
 [virt]
