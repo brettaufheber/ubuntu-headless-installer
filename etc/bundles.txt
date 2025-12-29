@@ -8,6 +8,7 @@ iproute2
 mtr-tiny
 net-tools
 arp-scan
+avahi-utils
 dnsutils
 tcpdump
 telnet
