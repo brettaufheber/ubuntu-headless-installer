@@ -205,7 +205,7 @@ function get_extra_groups {
 
   # fallback
   if [[ -z "${EXTRA_GROUPS:-}" ]]; then
-    EXTRA_GROUPS='adm audio docker libvirt lpadmin lxd scanner sudo users video wireshark'
+    EXTRA_GROUPS='adm audio docker libvirt lpadmin lxd nix-users scanner sudo users video wireshark'
   fi
 
   echo -n "$EXTRA_GROUPS"

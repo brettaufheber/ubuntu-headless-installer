@@ -33,6 +33,9 @@ virtinst libvirt-daemon-system
 ### development software ###
 [dev]
 
+# Nix paketmanager for reproducible builds
+nix-setup-systemd
+
 # install support for Assembly/C/C++
 build-essential
 clang lldb lld llvm
