@@ -37,12 +37,10 @@ virtinst libvirt-daemon-system
 nix-setup-systemd
 
 # install support for Assembly/C/C++
+pkg-config
 build-essential
 clang lldb lld llvm
 cmake
-libboost-all-dev
-qtbase5-dev qtbase5-dev-tools qttools5-dev qttools5-dev-tools qtchooser qt5-qmake
-libgtkmm-3.0-dev libgtkmm-2.4-dev
 
 # install support for Ada
 gnat
@@ -80,6 +78,7 @@ golang
 # install support for Rust
 rustc
 cargo
+rustup
 
 # install support for Java, Scala and other JVM languages
 openjdk-%OPENJDK_VERSION%-jdk
