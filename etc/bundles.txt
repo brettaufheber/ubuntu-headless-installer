@@ -131,7 +131,9 @@ network-manager-vpnc network-manager-vpnc-gnome
 network-manager-strongswan
 
 # install scanner and printer support
-gscan2pdf
+ipp-usb
+avahi-daemon
+sane-utils sane-airscan
 cups cups-client cups-pdf cups-bsd
 
 # install font files
